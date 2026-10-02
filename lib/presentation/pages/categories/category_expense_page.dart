@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class TransactionScreen extends StatelessWidget {
-  const TransactionScreen({super.key});
+import 'add_expense_page.dart';
+
+class CategoryExpenseScreen extends StatelessWidget {
+  final String categoryName;
+
+  const CategoryExpenseScreen({
+    super.key,
+    required this.categoryName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +19,6 @@ class TransactionScreen extends StatelessWidget {
 
     const mainGreen = Color(0xFF00D09E);
     const lightGreen = Color(0xFFF1FFF3);
-    const softGreen = Color(0xFFDDF5E2);
     const darkGreen = Color(0xFF063F3F);
     const blue = Color(0xFF168BFF);
 
@@ -22,7 +28,7 @@ class TransactionScreen extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(
-              height: height * 0.36,
+              height: height * 0.29,
               child: Column(
                 children: [
                   const SizedBox(height: 15),
@@ -30,6 +36,7 @@ class TransactionScreen extends StatelessWidget {
                   Row(
                     children: [
                       const SizedBox(width: 25),
+
                       GestureDetector(
                         onTap: () {
                           Navigator.pop(context);
@@ -40,10 +47,11 @@ class TransactionScreen extends StatelessWidget {
                           size: 27,
                         ),
                       ),
+
                       Expanded(
                         child: Center(
                           child: Text(
-                            'Transaction',
+                            categoryName,
                             style: GoogleFonts.poppins(
                               fontSize: 19,
                               fontWeight: FontWeight.w600,
@@ -52,6 +60,7 @@ class TransactionScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       Container(
                         width: 32,
                         height: 32,
@@ -69,145 +78,125 @@ class TransactionScreen extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 28),
 
-                  Container(
-                    width: width * 0.82,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: lightGreen,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 45),
+                    child: Row(
                       children: [
-                        Text(
-                          'Total Balance',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: darkGreen,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '▧ Total Balance',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9,
+                                  color: darkGreen,
+                                ),
+                              ),
+                              Text(
+                                '\$7,783.00',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          '\$7,783.00',
-                          style: GoogleFonts.poppins(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            color: darkGreen,
+
+                        Container(
+                          width: 1,
+                          height: 38,
+                          color: darkGreen,
+                        ),
+
+                        const SizedBox(width: 20),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '▧ Total Expense',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9,
+                                  color: darkGreen,
+                                ),
+                              ),
+                              Text(
+                                '-\$1.187.40',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w600,
+                                  color: blue,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
 
-                  Row(
-                    children: [
-                      const SizedBox(width: 34),
-
-                      Expanded(
-                        child: Container(
-                          height: 84,
-                          decoration: BoxDecoration(
-                            color: lightGreen,
-                            borderRadius: BorderRadius.circular(13),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 45),
+                    child: Container(
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDDF5E2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: width * 0.17,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: darkGreen,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '30%',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: mainGreen,
-                                    width: 2,
-                                  ),
-                                  borderRadius:
-                                  BorderRadius.circular(5),
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_outward,
-                                  size: 15,
-                                  color: mainGreen,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Income',
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                '\$20,000.00',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  color: darkGreen,
-                                ),
-                              ),
-                              Text(
-                                '\$4,120.00',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 17,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.w600,
                                   color: darkGreen,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
+                    ),
+                  ),
 
-                      const SizedBox(width: 13),
+                  const SizedBox(height: 8),
 
-                      Expanded(
-                        child: Container(
-                          height: 84,
-                          decoration: BoxDecoration(
-                            color: lightGreen,
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: Column(
-                            mainAxisAlignment:
-                            MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: blue,
-                                    width: 2,
-                                  ),
-                                  borderRadius:
-                                  BorderRadius.circular(5),
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_downward,
-                                  size: 15,
-                                  color: blue,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Expense',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  color: darkGreen,
-                                ),
-                              ),
-                              Text(
-                                '\$1.187.40',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: blue,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 34),
-                    ],
+                  Text(
+                    '☑ 30% Of Your Expenses, Looks Good.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      color: darkGreen,
+                    ),
                   ),
                 ],
               ),
@@ -232,16 +221,16 @@ class TransactionScreen extends StatelessWidget {
                       crossAxisAlignment:
                       CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 25),
 
                         Row(
                           mainAxisAlignment:
                           MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'April',
+                              'March',
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: darkGreen,
                               ),
@@ -263,81 +252,6 @@ class TransactionScreen extends StatelessWidget {
                           ],
                         ),
 
-                        const SizedBox(height: 14),
-
-                        Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFF62B0FF),
-                              ),
-                              child: const Icon(
-                                Icons.layers_outlined,
-                                color: Colors.white,
-                                size: 25,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Salary',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: darkGreen,
-                                    ),
-                                  ),
-                                  Text(
-                                    '18:27 - April 30',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: blue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: 45,
-                              child: Text(
-                                'Monthly',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            Text(
-                              '\$4.000,00',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: darkGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-
                         const SizedBox(height: 15),
 
                         Row(
@@ -350,19 +264,23 @@ class TransactionScreen extends StatelessWidget {
                                 color: Color(0xFF168BFF),
                               ),
                               child: const Icon(
-                                Icons.shopping_bag_outlined,
+                                Icons.directions_bus_outlined,
                                 color: Colors.white,
                                 size: 25,
                               ),
                             ),
+
                             const SizedBox(width: 12),
+
                             Expanded(
                               child: Column(
                                 crossAxisAlignment:
                                 CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Groceries',
+                                    categoryName == 'Transport'
+                                        ? 'Fuel'
+                                        : 'Expense',
                                     style: GoogleFonts.poppins(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -370,7 +288,7 @@ class TransactionScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '17:00 - April 24',
+                                    '18:27 - March 30',
                                     style: GoogleFonts.poppins(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w600,
@@ -380,30 +298,9 @@ class TransactionScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: 45,
-                              child: Text(
-                                'Pantry',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
+
                             Text(
-                              '-\$100,00',
+                              '-\$3.53',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -422,22 +319,24 @@ class TransactionScreen extends StatelessWidget {
                               height: 46,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Color(0xFF168BFF),
+                                color: Color(0xFF62B0FF),
                               ),
                               child: const Icon(
-                                Icons.volunteer_activism_outlined,
+                                Icons.directions_bus_outlined,
                                 color: Colors.white,
                                 size: 25,
                               ),
                             ),
+
                             const SizedBox(width: 12),
+
                             Expanded(
                               child: Column(
                                 crossAxisAlignment:
                                 CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Rent',
+                                    'Car Parts',
                                     style: GoogleFonts.poppins(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -445,7 +344,7 @@ class TransactionScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '8:30 - April 15',
+                                    '15:00 - March 30',
                                     style: GoogleFonts.poppins(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w600,
@@ -455,30 +354,132 @@ class TransactionScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: 45,
-                              child: Text(
-                                'Rent',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: darkGreen,
-                                ),
+
+                            Text(
+                              '-\$26.75',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: blue,
                               ),
                             ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        Text(
+                          'February',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: darkGreen,
+                          ),
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        Row(
+                          children: [
                             Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
+                              width: 46,
+                              height: 46,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF168BFF),
+                              ),
+                              child: const Icon(
+                                Icons.directions_bus_outlined,
+                                color: Colors.white,
+                                size: 25,
+                              ),
                             ),
-                            const SizedBox(width: 15),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'New Tires',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: darkGreen,
+                                    ),
+                                  ),
+                                  Text(
+                                    '12:47 - February 10',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                             Text(
-                              '-\$674,40',
+                              '-\$373.99',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: blue,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        Row(
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF62B0FF),
+                              ),
+                              child: const Icon(
+                                Icons.directions_bus_outlined,
+                                color: Colors.white,
+                                size: 25,
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Car Wash',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: darkGreen,
+                                    ),
+                                  ),
+                                  Text(
+                                    '9:30 - February 09',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            Text(
+                              '-\$9.74',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -505,14 +506,16 @@ class TransactionScreen extends StatelessWidget {
                                 size: 25,
                               ),
                             ),
+
                             const SizedBox(width: 12),
+
                             Expanded(
                               child: Column(
                                 crossAxisAlignment:
                                 CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Transport',
+                                    'Public Transport',
                                     style: GoogleFonts.poppins(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -520,7 +523,7 @@ class TransactionScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '7:30 - April 08',
+                                    '7:50 - February 01',
                                     style: GoogleFonts.poppins(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w600,
@@ -530,30 +533,9 @@ class TransactionScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: 45,
-                              child: Text(
-                                'Fuel',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
+
                             Text(
-                              '-\$4,13',
+                              '-\$1.24',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -565,88 +547,40 @@ class TransactionScreen extends StatelessWidget {
 
                         const SizedBox(height: 25),
 
-                        Text(
-                          'March',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: darkGreen,
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFF62B0FF),
-                              ),
-                              child: const Icon(
-                                Icons.restaurant_outlined,
-                                color: Colors.white,
-                                size: 25,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Food',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: darkGreen,
-                                    ),
+                        Center(
+                          child: SizedBox(
+                            width: 140,
+                            height: 30,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AddExpenseScreen(
+                                          categoryName: categoryName,
+                                        ),
                                   ),
-                                  Text(
-                                    '19:30 - March 31',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: blue,
-                                    ),
-                                  ),
-                                ],
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: mainGreen,
+                                foregroundColor: darkGreen,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                  BorderRadius.circular(20),
+                                ),
                               ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            SizedBox(
-                              width: 45,
                               child: Text(
-                                'Dinner',
+                                'Add Expenses',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: darkGreen,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
-                            Container(
-                              width: 1,
-                              height: 35,
-                              color: mainGreen,
-                            ),
-                            const SizedBox(width: 15),
-                            Text(
-                              '-\$70,40',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: blue,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
 
                         const SizedBox(height: 30),
