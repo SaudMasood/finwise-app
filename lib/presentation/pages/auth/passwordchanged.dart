@@ -11,7 +11,8 @@ class PasswordChangedScreen extends StatefulWidget {
       _PasswordChangedScreenState();
 }
 
-class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
+class _PasswordChangedScreenState
+    extends State<PasswordChangedScreen> {
   int dotCount = 1;
   bool showCheck = false;
 
@@ -19,41 +20,47 @@ class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(milliseconds: 400), () {
-      if (!mounted) return;
+    Timer(
+      const Duration(milliseconds: 400),
+          () {
+        if (mounted) {
+          setState(() {
+            dotCount = 2;
+          });
+        }
+      },
+    );
 
-      setState(() {
-        dotCount = 2;
-      });
-    });
+    Timer(
+      const Duration(milliseconds: 800),
+          () {
+        if (mounted) {
+          setState(() {
+            dotCount = 3;
+          });
+        }
+      },
+    );
 
-    Timer(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-
-      setState(() {
-        dotCount = 3;
-      });
-    });
-
-    Timer(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-
-      setState(() {
-        showCheck = true;
-      });
-    });
+    Timer(
+      const Duration(milliseconds: 1200),
+          () {
+        if (mounted) {
+          setState(() {
+            showCheck = true;
+          });
+        }
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-
-    const mainGreen = Color(0xFF00D09E);
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: const Color(0xFF00D09E),
       body: SafeArea(
         child: Center(
           child: Column(
@@ -64,6 +71,7 @@ class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
                 height: width * 0.27,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: const Color(0xFF00D09E),
                   border: Border.all(
                     color: Colors.white,
                     width: 6,
@@ -71,13 +79,15 @@ class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
                 ),
                 child: Center(
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
+                    duration: const Duration(
+                      milliseconds: 250,
+                    ),
                     child: showCheck
                         ? const Icon(
                       Icons.check,
                       key: ValueKey('check'),
-                      color: Colors.white,
                       size: 65,
+                      color: Colors.white,
                     )
                         : Text(
                       '.' * dotCount,
@@ -92,7 +102,9 @@ class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
                 ),
               ),
 
-              SizedBox(height: height * 0.035),
+              SizedBox(
+                height: height * 0.04,
+              ),
 
               Text(
                 'Password Has Been\nChanged Successfully',
@@ -100,7 +112,6 @@ class _PasswordChangedScreenState extends State<PasswordChangedScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  height: 1.2,
                   color: Colors.white,
                 ),
               ),

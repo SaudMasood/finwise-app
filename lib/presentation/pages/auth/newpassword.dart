@@ -1,241 +1,331 @@
-import 'package:finwise/presentation/pages/auth/passwordchanged.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../bloc/auth/newpassword/newpass_bloc.dart';
+import '../../bloc/auth/newpassword/newpass_event.dart';
+import '../../bloc/auth/newpassword/newpass_state.dart';
+import 'passwordchanged.dart';
+
 class NewPasswordScreen extends StatefulWidget {
-  const NewPasswordScreen({super.key});
+  const NewPasswordScreen({super.key, required String email});
 
   @override
-  State<NewPasswordScreen> createState() => _NewPasswordScreenState();
+  State<NewPasswordScreen> createState() =>
+      _NewPasswordScreenState();
 }
 
 class _NewPasswordScreenState extends State<NewPasswordScreen> {
-  bool isNewPasswordVisible = false;
-  bool isConfirmPasswordVisible = false;
+  final TextEditingController passwordController =
+  TextEditingController();
+
+  final TextEditingController confirmPasswordController =
+  TextEditingController();
+
+  bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
+    final height = MediaQuery.of(context).size.height;
 
-    const mainGreen = Color(0xFF00D09E);
-    const lightGreen = Color(0xFFF1FFF3);
-    const fieldGreen = Color(0xFFDDF5E2);
-    const darkGreen = Color(0xFF093030);
-
-    return Scaffold(
-      backgroundColor: mainGreen,
-      body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(
-              height: height * 0.17,
-              child: Center(
-                child: Text(
-                  'New Password',
-                  style: GoogleFonts.poppins(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w600,
-                    color: darkGreen,
-                  ),
-                ),
+    return BlocProvider(
+      create: (_) => NewPasswordBloc(),
+      child: BlocListener<NewPasswordBloc, NewPasswordState>(
+        listener: (context, state) {
+          if (state is NewPasswordSuccess) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                const PasswordChangedScreen(),
               ),
-            ),
+            );
+          }
 
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(45),
-                    topRight: Radius.circular(45),
+          if (state is NewPasswordFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+              ),
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF1FFF3),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  height: height * 0.19,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00D09E),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(45),
+                      bottomRight: Radius.circular(45),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'New Password',
+                      style: GoogleFonts.poppins(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: width * 0.075,
-                    ),
-                    child: Column(
-                      children: [
-                        SizedBox(height: height * 0.065),
 
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 25,
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: height * 0.06,
+                          ),
+
+                          Text(
+                            'Create New Password',
+                            style: GoogleFonts.poppins(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF093030),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            'Enter your new password below.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: const Color(0xFF093030),
+                            ),
+                          ),
+
+                          SizedBox(
+                            height: height * 0.04,
+                          ),
+
+                          Text(
                             'New Password',
                             style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: darkGreen,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF093030),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 7),
+                          const SizedBox(height: 8),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: 40,
-                          child: TextField(
-                            obscureText: !isNewPasswordVisible,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
+                          Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDFF7E2),
+                              borderRadius:
+                              BorderRadius.circular(12),
                             ),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: fieldGreen,
-                              hintText: '●●●●●●●●',
-                              hintStyle: GoogleFonts.poppins(
-                                fontSize: 13,
-                                color: const Color(0xFF82A99F),
-                              ),
-                              contentPadding: const EdgeInsets.only(
-                                left: 20,
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    isNewPasswordVisible =
-                                    !isNewPasswordVisible;
-                                  });
-                                },
-                                icon: Icon(
-                                  isNewPasswordVisible
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  size: 17,
-                                  color: darkGreen,
+                            child: TextField(
+                              controller: passwordController,
+                              obscureText: obscurePassword,
+                              decoration: InputDecoration(
+                                hintText: 'Enter new password',
+                                hintStyle: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                ),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      obscurePassword =
+                                      !obscurePassword;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color:
+                                    const Color(0xFF093030),
+                                  ),
                                 ),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
                             ),
                           ),
-                        ),
 
-                        SizedBox(height: height * 0.045),
+                          SizedBox(
+                            height: height * 0.025,
+                          ),
 
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Confirm New Password',
+                          Text(
+                            'Confirm Password',
                             style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: darkGreen,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF093030),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 7),
+                          const SizedBox(height: 8),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: 40,
-                          child: TextField(
-                            obscureText: !isConfirmPasswordVisible,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
+                          Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDFF7E2),
+                              borderRadius:
+                              BorderRadius.circular(12),
                             ),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: fieldGreen,
-                              hintText: '●●●●●●●●',
-                              hintStyle: GoogleFonts.poppins(
-                                fontSize: 13,
-                                color: const Color(0xFF82A99F),
-                              ),
-                              contentPadding: const EdgeInsets.only(
-                                left: 20,
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    isConfirmPasswordVisible =
-                                    !isConfirmPasswordVisible;
-                                  });
-                                },
-                                icon: Icon(
-                                  isConfirmPasswordVisible
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  size: 17,
-                                  color: darkGreen,
+                            child: TextField(
+                              controller:
+                              confirmPasswordController,
+                              obscureText:
+                              obscureConfirmPassword,
+                              decoration: InputDecoration(
+                                hintText: 'Confirm new password',
+                                hintStyle: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                ),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      obscureConfirmPassword =
+                                      !obscureConfirmPassword;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    obscureConfirmPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color:
+                                    const Color(0xFF093030),
+                                  ),
                                 ),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
                             ),
                           ),
-                        ),
 
-                        SizedBox(height: height * 0.105),
+                          SizedBox(
+                            height: height * 0.05,
+                          ),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: 45,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                  const PasswordChangedScreen(),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: mainGreen,
-                              foregroundColor: darkGreen,
-                              elevation: 0,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+                          Center(
+                            child: BlocBuilder<
+                                NewPasswordBloc,
+                                NewPasswordState>(
+                              builder: (context, state) {
+                                final loading =
+                                state is NewPasswordLoading;
+
+                                return SizedBox(
+                                  width: 145,
+                                  height: 42,
+                                  child: ElevatedButton(
+                                    onPressed: loading
+                                        ? null
+                                        : () {
+                                      context
+                                          .read<
+                                          NewPasswordBloc>()
+                                          .add(
+                                        NewPasswordSubmitted(
+                                          password:
+                                          passwordController
+                                              .text
+                                              .trim(),
+                                          confirmPassword:
+                                          confirmPasswordController
+                                              .text
+                                              .trim(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                      const Color(0xFF00D09E),
+                                      shape:
+                                      RoundedRectangleBorder(
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                          25,
+                                        ),
+                                      ),
+                                    ),
+                                    child: loading
+                                        ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child:
+                                      CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                        : Text(
+                                      'Change Password',
+                                      style:
+                                      GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight:
+                                        FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
+                          ),
+
+                          SizedBox(
+                            height: height * 0.08,
+                          ),
+
+                          Center(
                             child: Text(
-                              'Change Password',
+                              'Don’t have an account? ',
                               style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color:
+                                const Color(0xFF093030),
                               ),
                             ),
                           ),
-                        ),
 
-                        SizedBox(height: height * 0.12),
-                      ],
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

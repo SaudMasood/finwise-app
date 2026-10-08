@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../notification/notification.dart';
 import 'notifsetting.dart';
-import 'passwordsetnew.dart';
+import 'passwordsetnew.dart' hide PasswordSettingScreen;
 import 'deleteacc.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -87,7 +88,7 @@ class SettingsScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                              const NotificationSettingScreen(),
+                              const NotificationScreen(),
                             ),
                           );
                         },

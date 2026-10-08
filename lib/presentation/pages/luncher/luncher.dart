@@ -1,3 +1,4 @@
+import 'package:finwise/presentation/pages/onboarding/onboarding.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -67,7 +68,7 @@ class LaunchScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                          builder: (context) => const OnboardingScreen(),
                         ),
                       );
                     },
@@ -83,7 +84,7 @@ class LaunchScreen extends StatelessWidget {
                     child: Text(
                       'Log In',
                       style: GoogleFonts.poppins(
-                        fontSize: 14 * scale,
+                        fontSize: 16 * scale,
                         fontWeight: FontWeight.bold,
                         height: 1.0,
                       ),
@@ -91,7 +92,7 @@ class LaunchScreen extends StatelessWidget {
                   ),
                 ),
 
-                SizedBox(height: 9 * scale),
+                SizedBox(height: 10 * scale),
 
                 SizedBox(
                   width: 207 * scale,
@@ -110,7 +111,7 @@ class LaunchScreen extends StatelessWidget {
                     child: Text(
                       'Sign Up',
                       style: GoogleFonts.poppins(
-                        fontSize: 14 * scale,
+                        fontSize: 16 * scale,
                         fontWeight: FontWeight.bold,
                         height: 1.0,
                       ),
@@ -123,7 +124,7 @@ class LaunchScreen extends StatelessWidget {
                 Text(
                   'Forgot Password?',
                   style: GoogleFonts.poppins(
-                    fontSize: 9 * scale,
+                    fontSize: 12 * scale,
                     fontWeight: FontWeight.bold,
                     height: 1.0,
                     color: const Color(0xFF063F3F),

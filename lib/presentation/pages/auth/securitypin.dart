@@ -1,339 +1,279 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../bloc/auth/securitypin/securitypin_bloc.dart';
+import '../../bloc/auth/securitypin/securitypin_event.dart';
+import '../../bloc/auth/securitypin/securitypin_state.dart';
+import 'login_page.dart';
 import 'newpassword.dart';
 
-
 class SecurityPinScreen extends StatelessWidget {
-  const SecurityPinScreen({super.key});
+  final String email;
+
+  const SecurityPinScreen({
+    super.key,
+    required this.email,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
+    final height = MediaQuery.of(context).size.height;
 
-    const mainGreen = Color(0xFF00D09E);
-    const lightGreen = Color(0xFFF1FFF3);
-    const darkGreen = Color(0xFF093030);
-    const blue = Color(0xFF168BFF);
-
-    return Scaffold(
-      backgroundColor: mainGreen,
-      body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(
-              height: height * 0.18,
-              child: Center(
-                child: Text(
-                  'Security Pin',
-                  style: GoogleFonts.poppins(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w600,
-                    color: darkGreen,
-                  ),
+    return BlocProvider(
+      create: (_) => SecurityPinBloc(
+        firebaseAuth: FirebaseAuth.instance,
+      ),
+      child: BlocListener<SecurityPinBloc, SecurityPinState>(
+        listener: (context, state) {
+          if (state is SecurityPinSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please check your email.',
                 ),
               ),
-            ),
+            );
 
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(45),
-                    topRight: Radius.circular(45),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(height: height * 0.075),
-
-                      Text(
-                        'Enter Security Pin',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: darkGreen,
-                        ),
-                      ),
-
-                      SizedBox(height: height * 0.06),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '2',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 11),
-
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '7',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 11),
-
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '3',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 11),
-
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '9',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 11),
-
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '1',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 11),
-
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: mainGreen,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '6',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: height * 0.075),
-
-                      SizedBox(
-                        width: 110,
-                        height: 34,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                const NewPasswordScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: mainGreen,
-                            foregroundColor: darkGreen,
-                            elevation: 0,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: Text(
-                            'Accept',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      SizedBox(
-                        width: 110,
-                        height: 34,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFDDF5E2),
-                            foregroundColor: darkGreen,
-                            elevation: 0,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: Text(
-                            'Send Again',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: height * 0.15),
-
-                      Text(
-                        'or sign up with',
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w300,
-                          color: darkGreen,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/login_facebook.svg',
-                            width: 33,
-                            height: 33,
-                          ),
-
-                          const SizedBox(width: 17),
-
-                          SvgPicture.asset(
-                            'assets/icons/login_google.svg',
-                            width: 33,
-                            height: 33,
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w300,
-                            color: darkGreen,
-                          ),
-                          children: const [
-                            TextSpan(
-                              text: 'Don’t have an account? ',
-                            ),
-                            TextSpan(
-                              text: 'Sign Up',
-                              style: TextStyle(
-                                color: blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-                ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoginScreen(),
               ),
+            );
+          }
+
+          if (state is SecurityPinFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+              ),
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF1FFF3),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  height: height * 0.19,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00D09E),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(45),
+                      bottomRight: Radius.circular(45),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Check Your Email',
+                      style: GoogleFonts.poppins(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 25,
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: height * 0.07,
+                          ),
+                          Text(
+                            'Password Reset Email',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF093030),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'We have sent a password reset link to:',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: const Color(0xFF093030),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 15,
+                              vertical: 15,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDFF7E2),
+                              borderRadius:
+                              BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              email,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF093030),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          Text(
+                            'Open your email and tap the password reset link. '
+                                'The link will allow you to create a new password.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              height: 1.6,
+                              color: const Color(0xFF093030),
+                            ),
+                          ),
+                          SizedBox(
+                            height: height * 0.08,
+                          ),
+                          Center(
+                            child: BlocBuilder<
+                                SecurityPinBloc,
+                                SecurityPinState>(
+                              builder: (context, state) {
+                                final loading =
+                                state is SecurityPinLoading;
+
+                                return SizedBox(
+                                  width: 145,
+                                  height: 42,
+                                  child: ElevatedButton(
+                                    onPressed: loading
+                                        ? null
+                                        : () {
+                                      context
+                                          .read<
+                                          SecurityPinBloc>()
+                                          .add(
+                                        SecurityEmailChecked(
+                                          email: email,
+                                        ),
+                                      );
+                                    },
+                                    style:
+                                    ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                      const Color(0xFF00D09E),
+                                      disabledBackgroundColor:
+                                      const Color(0xFF00D09E),
+                                      elevation: 0,
+                                      shape:
+                                      RoundedRectangleBorder(
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                          25,
+                                        ),
+                                      ),
+                                    ),
+                                    child: loading
+                                        ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child:
+                                      CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                        : Text(
+                                      'Continue',
+                                      style:
+                                      GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight:
+                                        FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          Center(
+                            child: BlocBuilder<
+                                SecurityPinBloc,
+                                SecurityPinState>(
+                              builder: (context, state) {
+                                final loading =
+                                state is SecurityPinLoading;
+
+                                return TextButton(
+                                  onPressed: loading
+                                      ? null
+                                      : () {
+                                    context
+                                        .read<
+                                        SecurityPinBloc>()
+                                        .add(
+                                      SecurityEmailResend(
+                                        email: email,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Send Again',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight:
+                                      FontWeight.w600,
+                                      color:
+                                      const Color(0xFF168BFF),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        NewPasswordScreen(
+                                          email: email,
+                                        ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Set New Password',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF093030),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

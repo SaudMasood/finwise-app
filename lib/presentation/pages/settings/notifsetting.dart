@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class NotificationSettingScreen extends StatefulWidget {
-  const NotificationSettingScreen({super.key});
+class PasswordSettingScreen extends StatefulWidget {
+  const PasswordSettingScreen({super.key});
 
   @override
-  State<NotificationSettingScreen> createState() =>
-      _NotificationSettingScreenState();
+  State<PasswordSettingScreen> createState() =>
+      _PasswordSettingScreenState();
 }
 
-class _NotificationSettingScreenState
-    extends State<NotificationSettingScreen> {
-  bool reminder = true;
-  bool transactions = true;
-  bool updates = true;
+class _PasswordSettingScreenState
+    extends State<PasswordSettingScreen> {
+  bool currentHide = true;
+  bool newHide = true;
+  bool confirmHide = true;
 
   @override
   Widget build(BuildContext context) {
     const mainGreen = Color(0xFF00D09E);
     const lightGreen = Color(0xFFF1FFF3);
+    const softGreen = Color(0xFFDDF5E2);
     const darkGreen = Color(0xFF063F3F);
 
     return Scaffold(
@@ -41,9 +42,9 @@ class _NotificationSettingScreenState
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Notification Settings',
+                        'Password Settings',
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w600,
                           color: darkGreen,
                         ),
@@ -65,61 +66,116 @@ class _NotificationSettingScreenState
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(30),
+                  padding: const EdgeInsets.fromLTRB(
+                    30,
+                    50,
+                    30,
+                    30,
+                  ),
                   child: Column(
                     children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          'Reminder Notifications',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: darkGreen,
+                      TextField(
+                        obscureText: currentHide,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          filled: true,
+                          fillColor: softGreen,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                            BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                currentHide = !currentHide;
+                              });
+                            },
+                            icon: Icon(
+                              currentHide
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
                           ),
                         ),
-                        value: reminder,
-                        activeColor: mainGreen,
-                        onChanged: (value) {
-                          setState(() {
-                            reminder = value;
-                          });
-                        },
                       ),
 
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          'Transaction Notifications',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: darkGreen,
+                      const SizedBox(height: 25),
+
+                      TextField(
+                        obscureText: newHide,
+                        decoration: InputDecoration(
+                          labelText: 'New Password',
+                          filled: true,
+                          fillColor: softGreen,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                            BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                newHide = !newHide;
+                              });
+                            },
+                            icon: Icon(
+                              newHide
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
                           ),
                         ),
-                        value: transactions,
-                        activeColor: mainGreen,
-                        onChanged: (value) {
-                          setState(() {
-                            transactions = value;
-                          });
-                        },
                       ),
 
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          'New Updates',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: darkGreen,
+                      const SizedBox(height: 25),
+
+                      TextField(
+                        obscureText: confirmHide,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm New Password',
+                          filled: true,
+                          fillColor: softGreen,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                            BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                confirmHide = !confirmHide;
+                              });
+                            },
+                            icon: Icon(
+                              confirmHide
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
                           ),
                         ),
-                        value: updates,
-                        activeColor: mainGreen,
-                        onChanged: (value) {
-                          setState(() {
-                            updates = value;
-                          });
-                        },
+                      ),
+
+                      const SizedBox(height: 45),
+
+                      SizedBox(
+                        width: 180,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: mainGreen,
+                            foregroundColor: darkGreen,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(22),
+                            ),
+                          ),
+                          child: const Text(
+                            'Change Password',
+                          ),
+                        ),
                       ),
                     ],
                   ),
