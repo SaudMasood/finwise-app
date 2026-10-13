@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/widgets/authn_wid.dart';
+import '../../../core/wigit/authn_wid.dart';
 import '../../../data/datasources/facebooklogind.dart';
 import '../../../data/datasources/goglelogindatas.dart';
 import '../../../data/datasources/logindatasource.dart';

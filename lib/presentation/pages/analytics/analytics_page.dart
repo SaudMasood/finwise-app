@@ -12,6 +12,7 @@ import '../../../domain/usecases/analytics/analytics_usecase.dart';
 import '../../bloc/analytics/analytics_bloc.dart';
 import '../../bloc/analytics/analytics_event.dart';
 import '../../bloc/analytics/analytics_state.dart';
+import '../notification/notification.dart';
 import 'cleander.dart';
 
 class AnalysisScreen extends StatelessWidget {
@@ -248,10 +249,21 @@ class _AnalysisViewState extends State<_AnalysisView> {
               color: lightGreen,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.notifications_none,
-              size: 20,
-              color: darkGreen,
+            child:IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.notifications_none,
+                color: Color(0xFF063F3F),
+              ),
             ),
           ),
         ],

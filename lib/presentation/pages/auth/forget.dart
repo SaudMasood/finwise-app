@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/widgets/authn_wid.dart';
+import '../../../core/wigit/authn_wid.dart';
 import '../../../data/datasources/facebooklogind.dart';
 import '../../../data/datasources/forgetpassdatas.dart';
 import '../../../data/datasources/goglelogindatas.dart';

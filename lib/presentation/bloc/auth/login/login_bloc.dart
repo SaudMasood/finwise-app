@@ -1,6 +1,9 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../data/datasources/fcm_notifction.dart';
 import '../../../../domain/usecases/auth/loginusecase.dart';
 import 'login_event.dart';
 import 'login_state.dart';
@@ -16,6 +19,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<FacebookLoginButtonPressed>(_facebookLogin);
   }
 
+  Future<void> _registerFcmDevice() async {
+    try {
+      await FcmService().registerDevice();
+    } catch (e) {
+      debugPrint('FCM device registration failed: $e');
+    }
+  }
+
   Future<void> _login(
       LoginButtonPressed event,
       Emitter<LoginState> emit,
@@ -28,10 +39,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         password: event.password,
       );
 
+      await _registerFcmDevice();
+
       emit(LoginSuccess());
     } on FirebaseAuthException catch (e) {
-      print('LOGIN FIREBASE ERROR CODE: ${e.code}');
-      print('LOGIN FIREBASE ERROR MESSAGE: ${e.message}');
+      debugPrint('LOGIN FIREBASE ERROR CODE: ${e.code}');
+      debugPrint('LOGIN FIREBASE ERROR MESSAGE: ${e.message}');
 
       emit(
         LoginFailure(
@@ -39,7 +52,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
     } catch (e) {
-      print('LOGIN ERROR: $e');
+      debugPrint('LOGIN ERROR: $e');
 
       emit(
         const LoginFailure(
@@ -58,10 +71,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       await loginUseCase.loginWithGoogle();
 
+      await _registerFcmDevice();
+
       emit(LoginSuccess());
     } on FirebaseAuthException catch (e) {
-      print('GOOGLE FIREBASE ERROR CODE: ${e.code}');
-      print('GOOGLE FIREBASE ERROR MESSAGE: ${e.message}');
+      debugPrint('GOOGLE FIREBASE ERROR CODE: ${e.code}');
+      debugPrint('GOOGLE FIREBASE ERROR MESSAGE: ${e.message}');
 
       emit(
         LoginFailure(
@@ -69,7 +84,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
     } catch (e) {
-      print('GOOGLE LOGIN ERROR: $e');
+      debugPrint('GOOGLE LOGIN ERROR: $e');
 
       emit(
         LoginFailure(
@@ -88,10 +103,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       await loginUseCase.loginWithFacebook();
 
+      await _registerFcmDevice();
+
       emit(LoginSuccess());
     } on FirebaseAuthException catch (e) {
-      print('FACEBOOK FIREBASE ERROR CODE: ${e.code}');
-      print('FACEBOOK FIREBASE ERROR MESSAGE: ${e.message}');
+      debugPrint('FACEBOOK FIREBASE ERROR CODE: ${e.code}');
+      debugPrint('FACEBOOK FIREBASE ERROR MESSAGE: ${e.message}');
 
       emit(
         LoginFailure(
@@ -99,7 +116,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
     } catch (e) {
-      print('FACEBOOK LOGIN ERROR: $e');
+      debugPrint('FACEBOOK LOGIN ERROR: $e');
 
       emit(
         LoginFailure(
@@ -113,31 +130,22 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     switch (code) {
       case 'invalid-credential':
         return 'Invalid login credentials.';
-
       case 'user-not-found':
         return 'No account found with this email.';
-
       case 'wrong-password':
         return 'Incorrect password.';
-
       case 'invalid-email':
         return 'Please enter a valid email.';
-
       case 'user-disabled':
         return 'This account has been disabled.';
-
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
-
       case 'network-request-failed':
         return 'Check your internet connection.';
-
       case 'operation-not-allowed':
         return 'This login method is not enabled in Firebase.';
-
       case 'account-exists-with-different-credential':
         return 'An account already exists with a different login method.';
-
       default:
         return 'Login failed: $code';
     }

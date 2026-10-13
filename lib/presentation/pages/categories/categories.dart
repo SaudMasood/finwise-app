@@ -14,6 +14,7 @@ import '../../../domain/usecases/categories/getexpenseusecase.dart';
 import '../../bloc/categories/categories_bloc.dart';
 import '../../bloc/categories/categories_event.dart';
 import '../../bloc/categories/categories_state.dart';
+import '../notification/notification.dart';
 import 'category_expense_page.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -182,10 +183,21 @@ class _CategoriesViewState
                     color: lightGreen,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.notifications_none,
-                    color: darkGreen,
-                    size: 20,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Color(0xFF063F3F),
+                    ),
                   ),
                 ),
               ],

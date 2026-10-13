@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/datasources/homedatasource.dart';
+import '../../../data/datasources/local_notification.dart';
 import '../../../data/repositories/home/home_repository_impl.dart';
 import '../../../domain/entities/home/home.dart';
 import '../../../domain/usecases/home/home_usecase.dart';
 import '../../bloc/home/home_bloc.dart';
 import '../../bloc/home/home_event.dart';
 import '../../bloc/home/home_state.dart';
+import '../notification/notification.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -175,19 +177,30 @@ class HomeView extends StatelessWidget {
                               ),
                             ],
                           ),
+                          SizedBox(width: 6,),
                           Container(
                             width: 36 * scale,
                             height: 36 * scale,
-                            decoration:
-                            const BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: lightGreen,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons
-                                  .notifications_none_outlined,
-                              color: darkGreen,
-                              size: 23 * scale,
+                            alignment: Alignment.center,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const NotificationScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.notifications_none,
+                                color: Color(0xFF063F3F),
+                              ),
                             ),
                           ),
                         ],
@@ -556,6 +569,10 @@ class HomeView extends StatelessWidget {
       HomeEntity home,
       double scale,
       ) {
+    final goal = home.totalIncome > 0
+        ? (home.totalBalance / home.totalIncome).clamp(0.0, 1.0).toDouble()
+        : 0.0;
+
     return Container(
       width: double.infinity,
       height: 124 * scale,
@@ -579,22 +596,37 @@ class HomeView extends StatelessWidget {
               mainAxisAlignment:
               MainAxisAlignment.center,
               children: [
-                Container(
+                SizedBox(
                   width: 58 * scale,
                   height: 58 * scale,
-                  decoration:
-                  BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: darkGreen,
-                      width: 2.2 * scale,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons
-                        .directions_car_outlined,
-                    size: 32 * scale,
-                    color: darkGreen,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 58 * scale,
+                        height: 58 * scale,
+                        child: CircularProgressIndicator(
+                          value: 1,
+                          strokeWidth: 3 * scale,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 58 * scale,
+                        height: 58 * scale,
+                        child: CircularProgressIndicator(
+                          value: goal,
+                          strokeWidth: 3 * scale,
+                          color: blue,
+                        ),
+                      ),
+                      Icon(
+                        Icons
+                            .directions_car_outlined,
+                        size: 32 * scale,
+                        color: darkGreen,
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(

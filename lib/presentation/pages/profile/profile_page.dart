@@ -1,328 +1,397 @@
+import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../data/datasources/local/profile_data_locl.dart';
+import '../../../data/datasources/remote/profile_datas.dart';
+import '../../../data/repositories/profile/profile_repository_impl.dart';
+import '../../../domain/usecases/profile/profile_usecase.dart';
+import '../../bloc/profile/profile_bloc.dart';
+import '../../bloc/profile/profile_event.dart';
+import '../../bloc/profile/profile_state.dart';
+
+import '../notification/notification.dart';
 import 'editprofile.dart';
 import 'security.dart';
 import '../settings/settings.dart';
-import '../help/faq_contact.dart';
+import '../help/help_faq_contact.dart';
 import '../logout/logout.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  static const Color mainGreen = Color(0xFF00D09E);
+  static const Color lightGreen = Color(0xFFF1FFF3);
+  static const Color softGreen = Color(0xFFDDF5E2);
+  static const Color darkGreen = Color(0xFF063F3F);
+
+  // Menu tile colors (match Figma)
+  static const Color tileLight = Color(0xFF6DB6FF);
+  static const Color tileMid = Color(0xFF3299FF);
+  static const Color tileStrong = Color(0xFF0068FF);
+
   @override
   Widget build(BuildContext context) {
-    const mainGreen = Color(0xFF00D09E);
-    const lightGreen = Color(0xFFF1FFF3);
-    const blue = Color(0xFF4DA3FF);
-    const darkGreen = Color(0xFF063F3F);
+    final localDataSource = ProfileLocalDataSource();
+    final remoteDataSource = ProfileRemoteDataSource();
 
-    return Scaffold(
-      backgroundColor: mainGreen,
-      body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 150,
-              child: Column(
-                children: [
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      const SizedBox(width: 25),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 27,
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            'Profile',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: darkGreen,
+    final repository = ProfileRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+    );
+
+    return BlocProvider(
+      create: (_) => ProfileBloc(
+        getProfile: GetProfile(repository),
+        saveProfile: SaveProfile(repository),
+        pickProfileImage: PickProfileImage(repository),
+      )..add(const LoadProfile()),
+      child: const _ProfileView(),
+    );
+  }
+}
+
+class _ProfileView extends StatelessWidget {
+  const _ProfileView();
+
+  static const double _avatarSize = 84;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<ProfileBloc, ProfileState>(
+      listenWhen: (previous, current) =>
+      previous.error != current.error ||
+          previous.message != current.message,
+      listener: (context, state) {
+        final message = state.message ?? state.error;
+
+        if (message != null && message.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor:
+              state.error != null ? Colors.red : ProfileScreen.darkGreen,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final profile = state.profile;
+        final user = FirebaseAuth.instance.currentUser;
+
+        final displayName = profile?.name.trim().isNotEmpty == true
+            ? profile!.name.trim()
+            : (user?.displayName?.trim().isNotEmpty == true
+            ? user!.displayName!.trim()
+            : (user?.email?.split('@').first ?? 'Your Name'));
+
+        final uid = user?.uid ?? profile?.uid ?? '';
+        final shortId = uid.length > 8 ? uid.substring(0, 8) : uid;
+
+        return Scaffold(
+          backgroundColor: ProfileScreen.mainGreen,
+          body: SafeArea(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 125,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.maybePop(context),
+                          child: const Padding(
+                            padding: EdgeInsets.only(top: 12),
+                            child: Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24,
                             ),
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 32,
-                        height: 32,
-                        margin: const EdgeInsets.only(right: 25),
-                        decoration: const BoxDecoration(
-                          color: lightGreen,
-                          shape: BoxShape.circle,
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 60),
+                            child: Center(
+                              child: Text(
+                                'Profile',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: ProfileScreen.darkGreen,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.notifications_none,
-                          color: darkGreen,
-                          size: 21,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: const BoxDecoration(
+                              color: ProfileScreen.lightGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const NotificationScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.notifications_none,
+                                color: ProfileScreen.darkGreen,
+                                size: 19,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: const BoxDecoration(
+                          color: ProfileScreen.lightGreen,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(45),
+                            topRight: Radius.circular(45),
+                          ),
+                        ),
+                        child: state.isLoading
+                            ? const Center(
+                          child: CircularProgressIndicator(
+                            color: ProfileScreen.mainGreen,
+                          ),
+                        )
+                            : profile == null
+                            ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Unable to load profile.',
+                                style: TextStyle(
+                                  color: ProfileScreen.darkGreen,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  context
+                                      .read<ProfileBloc>()
+                                      .add(const LoadProfile());
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                            : SingleChildScrollView(
+                          padding: const EdgeInsets.only(
+                            top: _avatarSize / 2 + 14,
+                            bottom: 24,
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                displayName,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: ProfileScreen.darkGreen,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'ID: $shortId',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: ProfileScreen.darkGreen,
+                                ),
+                              ),
+                              const SizedBox(height: 28),
+                              _ProfileMenuItem(
+                                icon: Icons.person_outline,
+                                title: 'Edit Profile',
+                                color: ProfileScreen.tileLight,
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                      const EditProfileScreen(),
+                                    ),
+                                  );
+
+                                  if (context.mounted) {
+                                    context
+                                        .read<ProfileBloc>()
+                                        .add(const LoadProfile());
+                                  }
+                                },
+                              ),
+                              _ProfileMenuItem(
+                                icon: Icons.verified_user_outlined,
+                                title: 'Security',
+                                color: ProfileScreen.tileMid,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                      const SecurityScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _ProfileMenuItem(
+                                icon: Icons.settings_outlined,
+                                title: 'Setting',
+                                color: ProfileScreen.tileStrong,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                      const SettingsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _ProfileMenuItem(
+                                icon: Icons.support_agent,
+                                title: 'Help',
+                                color: ProfileScreen.tileLight,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                      const FaqContactScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _ProfileMenuItem(
+                                icon: Icons.logout,
+                                title: 'Logout',
+                                color: ProfileScreen.tileMid,
+                                  onTap: () => showLogoutDialog(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // ---------- Avatar (overlaps header) ----------
+                      Positioned(
+                        top: -(_avatarSize / 2),
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            width: _avatarSize,
+                            height: _avatarSize,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: ProfileScreen.softGreen,
+                              border: Border.all(
+                                color: ProfileScreen.lightGreen,
+                                width: 3,
+                              ),
+                            ),
+                            child: profile?.imagePath != null &&
+                                File(profile!.imagePath!).existsSync()
+                                ? Image.file(
+                              File(profile.imagePath!),
+                              fit: BoxFit.cover,
+                            )
+                                : Image.asset(
+                              'assets/images/profile.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person,
+                                size: 44,
+                                color: ProfileScreen.darkGreen,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage(
-                          'assets/images/profile.png',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProfileMenuItem extends StatelessWidget {
+  const _ProfileMenuItem({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 11),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 25,
               ),
             ),
-
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(50),
-                    topRight: Radius.circular(50),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 55),
-
-                    Text(
-                      'John Smith',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: darkGreen,
-                      ),
-                    ),
-
-                    Text(
-                      'ID: 25030024',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: darkGreen,
-                      ),
-                    ),
-
-                    const SizedBox(height: 35),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const EditProfileScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 30),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: blue,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Text(
-                            'Edit Profile',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const SecurityScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 30),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: blue,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.verified_user_outlined,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Text(
-                            'Security',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const SettingsScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 30),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: blue,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.settings_outlined,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Text(
-                            'Setting',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const FaqContactScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 30),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: blue,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.support_agent,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Text(
-                            'Help',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const LogoutScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 30),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: blue,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.logout,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Text(
-                            'Logout',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(width: 14),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: ProfileScreen.darkGreen,
               ),
             ),
           ],

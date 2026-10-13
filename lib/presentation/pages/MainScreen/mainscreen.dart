@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../analytics/analytics_page.dart';
 import '../categories/categories.dart';
@@ -8,17 +9,19 @@ import '../saving/saving.dart';
 import '../transactions/transactions_page.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({
-    super.key,
-  });
+  const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() =>
-      _MainScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState
-    extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> {
+  static const Color mainGreen = Color(0xFF00D09E);
+  static const Color softGreen = Color(0xFFDDF5E2);
+
+  final List<GlobalKey<NavigatorState>> _navKeys =
+  List.generate(5, (_) => GlobalKey<NavigatorState>());
+
   int currentIndex = 0;
 
   bool showSavings = false;
@@ -27,30 +30,16 @@ class _MainScreenState
   double savingsTotalExpense = 0;
   double savingsTotalIncome = 0;
 
-  Widget getCurrentScreen() {
-    if (showSavings) {
-      return SavingsScreen(
-        totalBalance:
-        savingsTotalBalance,
-        totalExpense:
-        savingsTotalExpense,
-        totalIncome:
-        savingsTotalIncome,
-        onBack: () {
-          setState(() {
-            showSavings = false;
-            currentIndex = 2;
-          });
-        },
-      );
-    }
-
-    switch (currentIndex) {
+  Widget _rootFor(int index) {
+    switch (index) {
       case 0:
         return const HomeScreen();
 
       case 1:
         return const AnalysisScreen();
+
+      case 2:
+        return const TransactionScreen();
 
       case 3:
         return CategoriesScreen(
@@ -60,24 +49,14 @@ class _MainScreenState
             required double totalIncome,
           }) {
             setState(() {
-              savingsTotalBalance =
-                  totalBalance;
-
-              savingsTotalExpense =
-                  totalExpense;
-
-              savingsTotalIncome =
-                  totalIncome;
-
+              savingsTotalBalance = totalBalance;
+              savingsTotalExpense = totalExpense;
+              savingsTotalIncome = totalIncome;
               showSavings = true;
-
               currentIndex = 2;
             });
           },
         );
-
-      case 2:
-        return const TransactionScreen();
 
       case 4:
         return const ProfileScreen();
@@ -87,69 +66,124 @@ class _MainScreenState
     }
   }
 
+  Widget _tabNavigator(int index) {
+    return Navigator(
+      key: _navKeys[index],
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => _rootFor(index),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleBack() async {
+    if (showSavings) {
+      setState(() {
+        showSavings = false;
+        currentIndex = 2;
+      });
+      return;
+    }
+
+    final nested = _navKeys[currentIndex].currentState;
+
+    if (nested != null && await nested.maybePop()) {
+      return;
+    }
+
+    if (currentIndex != 0) {
+      setState(() {
+        currentIndex = 0;
+      });
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
+
+  void _onTabTap(int index) {
+    if (index == currentIndex && !showSavings) {
+      _navKeys[index].currentState?.popUntil((route) => route.isFirst);
+      return;
+    }
+
+    setState(() {
+      showSavings = false;
+      currentIndex = index;
+    });
+  }
+
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return Scaffold(
-      body: getCurrentScreen(),
-
-      bottomNavigationBar:
-      Container(
-        decoration:
-        const BoxDecoration(
-          color: Color(0xFFDDF5E2),
-          borderRadius:
-          BorderRadius.only(
-            topLeft:
-            Radius.circular(35),
-            topRight:
-            Radius.circular(35),
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 8,
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: _tabNavigator(currentIndex),
             ),
-            child: Row(
-              mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceAround,
-              children: [
-                _navigationItem(
-                  index: 0,
-                  icon:
-                  'assets/icons/Home.png',
+            if (showSavings)
+              Positioned.fill(
+                child: SavingsScreen(
+                  totalBalance: savingsTotalBalance,
+                  totalExpense: savingsTotalExpense,
+                  totalIncome: savingsTotalIncome,
+                  onBack: () {
+                    setState(() {
+                      showSavings = false;
+                      currentIndex = 2;
+                    });
+                  },
                 ),
-
-                _navigationItem(
-                  index: 1,
-                  icon:
-                  'assets/icons/Analysis.png',
-                ),
-
-
-                _navigationItem(
-                  index: 2,
-                  icon:
-                  'assets/icons/Vectors.png',
-                ),
-                _navigationItem(
-                  index: 3,
-                  icon:
-                  'assets/icons/Category.png',
-                ),
-
-
-                _navigationItem(
-                  index: 4,
-                  icon:
-                  'assets/icons/Profile.png',
-                ),
-              ],
+              ),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: softGreen,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(35),
+              topRight: Radius.circular(35),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 8,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navigationItem(
+                    index: 0,
+                    icon: 'assets/icons/Home.png',
+                  ),
+                  _navigationItem(
+                    index: 1,
+                    icon: 'assets/icons/Analysis.png',
+                  ),
+                  _navigationItem(
+                    index: 2,
+                    icon: 'assets/icons/Vectors.png',
+                  ),
+                  _navigationItem(
+                    index: 3,
+                    icon: 'assets/icons/Category.png',
+                  ),
+                  _navigationItem(
+                    index: 4,
+                    icon: 'assets/icons/Profile.png',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -161,22 +195,17 @@ class _MainScreenState
     required int index,
     required String icon,
   }) {
+    final selected = currentIndex == index;
+
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          showSavings = false;
-          currentIndex = index;
-        });
-      },
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _onTabTap(index),
       child: Container(
         width: 48,
         height: 48,
-        decoration:
-        BoxDecoration(
-          color: currentIndex == index
-              ? const Color(0xFF00D09E)
-              : Colors.transparent,
-          shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          color: selected ? mainGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Center(
           child: Image.asset(
