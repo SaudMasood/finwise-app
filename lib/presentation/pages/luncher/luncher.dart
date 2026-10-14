@@ -47,8 +47,8 @@ class LaunchScreen extends StatelessWidget {
                 SizedBox(height: 7 * scale),
 
                 Text(
-                  'Lorem ipsum dolor sit amet, consectetur\n'
-                      'adipiscing elit, sed do eiusmod.',
+                  'Track your spending, set smart budgets\n'
+                      'and take control of your money.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 9 * scale,
