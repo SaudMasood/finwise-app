@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../bloc/password/password_bloc.dart';
 import '../../bloc/password/password_event.dart';
 import '../../bloc/password/password_state.dart';
@@ -15,7 +16,8 @@ class PasswordSettingScreen extends StatefulWidget {
       _PasswordSettingScreenState();
 }
 
-class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
+class _PasswordSettingScreenState
+    extends State<PasswordSettingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _currentPasswordController = TextEditingController();
@@ -26,10 +28,30 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
   bool newHide = true;
   bool confirmHide = true;
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
+  // Figma colors
+  static const Color _figmaMint = Color(0xFFDDF5E3);
+  static const Color _figmaDarkTeal = Color(0xFF073B37);
+  static const Color _figmaHintColor = Color(0xFF80A99F);
+  static const Color _figmaButtonColor = Color(0xFF00CBA5);
+
+  bool get _isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get _background =>
+      _isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  Color get _surface =>
+      _isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  // Label sits OUTSIDE the field (like Figma): light on dark, dark on light.
+  Color get _labelColor =>
+      _isDark ? AppColors.darkText : AppColors.darkGreen;
+
+  Color get _fieldColor =>
+      _isDark ? _figmaMint : AppColors.softGreen;
+
+  Color get _fieldTextColor =>
+      _isDark ? _figmaDarkTeal : AppColors.darkGreen;
 
   @override
   void dispose() {
@@ -40,59 +62,81 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
   }
 
   InputDecoration _passwordDecoration({
-    required String label,
     required bool isHidden,
     required VoidCallback onToggle,
   }) {
+    const radius = 25.0;
+
     return InputDecoration(
-      labelText: label,
-      labelStyle: GoogleFonts.poppins(
-        color: darkGreen,
+      // No floating label: the label is a Text above the field (Figma).
+      hintText: '••••••••',
+      hintStyle: GoogleFonts.poppins(
+        color: _figmaHintColor,
         fontSize: 13,
+        letterSpacing: 4,
       ),
       filled: true,
-      fillColor: softGreen,
+      fillColor: _fieldColor,
+      isDense: true,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 18,
-        vertical: 18,
+        vertical: 14,
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
+        borderSide: BorderSide.none,
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radius),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         borderSide: const BorderSide(
-          color: mainGreen,
-          width: 1.5,
+          color: _figmaButtonColor,
+          width: 1.2,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         borderSide: const BorderSide(
-          color: Colors.redAccent,
+          color: AppColors.error,
+          width: 1,
         ),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         borderSide: const BorderSide(
-          color: Colors.redAccent,
-          width: 1.5,
+          color: AppColors.error,
+          width: 1.2,
         ),
       ),
+      errorStyle: GoogleFonts.poppins(
+        color: AppColors.error,
+        fontSize: 11,
+      ),
+      suffixIconConstraints: const BoxConstraints(
+        minWidth: 44,
+        minHeight: 30,
+      ),
       suffixIcon: IconButton(
+        padding: const EdgeInsets.only(right: 12),
+        constraints: const BoxConstraints(
+          minWidth: 44,
+          minHeight: 30,
+        ),
         tooltip: isHidden ? 'Show password' : 'Hide password',
         onPressed: onToggle,
         icon: Icon(
           isHidden
               ? Icons.visibility_off_outlined
               : Icons.visibility_outlined,
-          color: darkGreen,
-          size: 21,
+          color: _fieldTextColor,
+          size: 20,
         ),
       ),
     );
@@ -101,9 +145,7 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
   void _changePassword() {
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     context.read<PasswordBloc>().add(
       ChangePasswordRequested(
@@ -119,6 +161,116 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
     _confirmPasswordController.clear();
   }
 
+  Widget _header() {
+    return SizedBox(
+      height: 88,
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          IconButton(
+            onPressed: () => Navigator.maybePop(context),
+            icon: Icon(
+              Icons.arrow_back,
+              color: _isDark ? AppColors.darkText : AppColors.white,
+              size: 23,
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                'Password Settings',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: _isDark ? AppColors.darkText : AppColors.white,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _isDark ? _figmaMint : AppColors.lightGreen,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                tooltip: 'Notifications',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationScreen(),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications_none,
+                  color: _isDark ? _figmaDarkTeal : AppColors.darkGreen,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Label above + pill field below, exactly like the Figma layout.
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required bool isHidden,
+    required VoidCallback onToggle,
+    required String? Function(String?) validator,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.next,
+    VoidCallback? onSubmitted,
+    required bool isLoading,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 8),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: _labelColor,
+            ),
+          ),
+        ),
+        TextFormField(
+          controller: controller,
+          obscureText: isHidden,
+          obscuringCharacter: '•',
+          enabled: !isLoading,
+          textInputAction: textInputAction,
+          autofillHints: autofillHints,
+          cursorColor: _figmaButtonColor,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            letterSpacing: 4,
+            color: _fieldTextColor,
+          ),
+          decoration: _passwordDecoration(
+            isHidden: isHidden,
+            onToggle: onToggle,
+          ),
+          validator: validator,
+          onFieldSubmitted:
+          onSubmitted == null ? null : (_) => onSubmitted(),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PasswordBloc, PasswordState>(
@@ -129,11 +281,11 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
               content: Text(
                 state.message,
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 13,
                 ),
               ),
-              backgroundColor: darkGreen,
+              backgroundColor: AppColors.darkGreen,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -147,145 +299,62 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
               content: Text(
                 state.message,
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 13,
                 ),
               ),
-              backgroundColor: Colors.red.shade700,
+              backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
       },
       builder: (context, state) {
-        final bool isLoading = state is PasswordLoading;
+        final isLoading = state is PasswordLoading;
 
         return Scaffold(
-          backgroundColor: mainGreen,
+          backgroundColor: _background,
           body: SafeArea(
             child: Column(
               children: [
-                // Header
-                SizedBox(
-                  height: 100,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 23,
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            'Password Setting',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: darkGreen,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: const BoxDecoration(
-                            color: lightGreen,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            tooltip: 'Notifications',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                  const NotificationScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.notifications_none,
-                              color: darkGreen,
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Main content
+                _header(),
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: lightGreen,
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: _surface,
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(45),
                         topRight: Radius.circular(45),
                       ),
                     ),
                     child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(
                         28,
-                        35,
+                        48,
                         28,
-                        30,
+                        28,
                       ),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Heading
-                            Text(
-                              'Change Password',
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: darkGreen,
-                              ),
-                            ),
-                            const SizedBox(height: 7),
-                            Text(
-                              'Keep your account secure with a strong password.',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: darkGreen.withValues(alpha: 0.7),
-                                height: 1.6,
-                              ),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            // Current password
-                            TextFormField(
+                            _passwordField(
                               controller: _currentPasswordController,
-                              obscureText: currentHide,
-                              enabled: !isLoading,
-                              textInputAction: TextInputAction.next,
+                              label: 'Current Password',
+                              isHidden: currentHide,
+                              isLoading: isLoading,
                               autofillHints: const [
                                 AutofillHints.password,
                               ],
-                              decoration: _passwordDecoration(
-                                label: 'Current Password',
-                                isHidden: currentHide,
-                                onToggle: () {
-                                  setState(() {
-                                    currentHide = !currentHide;
-                                  });
-                                },
-                              ),
+                              onToggle: () {
+                                setState(() {
+                                  currentHide = !currentHide;
+                                });
+                              },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Enter your current password';
@@ -293,27 +362,21 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 28),
 
-                            const SizedBox(height: 22),
-
-                            // New password
-                            TextFormField(
+                            _passwordField(
                               controller: _newPasswordController,
-                              obscureText: newHide,
-                              enabled: !isLoading,
-                              textInputAction: TextInputAction.next,
+                              label: 'New Password',
+                              isHidden: newHide,
+                              isLoading: isLoading,
                               autofillHints: const [
                                 AutofillHints.newPassword,
                               ],
-                              decoration: _passwordDecoration(
-                                label: 'New Password',
-                                isHidden: newHide,
-                                onToggle: () {
-                                  setState(() {
-                                    newHide = !newHide;
-                                  });
-                                },
-                              ),
+                              onToggle: () {
+                                setState(() {
+                                  newHide = !newHide;
+                                });
+                              },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Enter your new password';
@@ -331,110 +394,75 @@ class _PasswordSettingScreenState extends State<PasswordSettingScreen> {
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 28),
 
-                            const SizedBox(height: 22),
-
-                            // Confirm password
-                            TextFormField(
+                            _passwordField(
                               controller: _confirmPasswordController,
-                              obscureText: confirmHide,
-                              enabled: !isLoading,
+                              label: 'Confirm New Password',
+                              isHidden: confirmHide,
+                              isLoading: isLoading,
                               textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
-                                if (!isLoading) {
-                                  _changePassword();
-                                }
+                              onToggle: () {
+                                setState(() {
+                                  confirmHide = !confirmHide;
+                                });
                               },
-                              decoration: _passwordDecoration(
-                                label: 'Confirm New Password',
-                                isHidden: confirmHide,
-                                onToggle: () {
-                                  setState(() {
-                                    confirmHide = !confirmHide;
-                                  });
-                                },
-                              ),
+                              onSubmitted: () {
+                                if (!isLoading) _changePassword();
+                              },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Confirm your new password';
                                 }
 
-                                if (value != _newPasswordController.text) {
+                                if (value !=
+                                    _newPasswordController.text) {
                                   return 'Passwords do not match';
                                 }
 
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 40),
 
-                            const SizedBox(height: 18),
-
-                            // Security information
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: softGreen,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    Icons.shield_outlined,
-                                    color: darkGreen,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Your password is securely managed by '
-                                          'Firebase Authentication. It is not '
-                                          'stored in Firestore.',
-                                      style: GoogleFonts.poppins(
-                                        color: darkGreen,
-                                        fontSize: 11,
-                                        height: 1.6,
-                                      ),
+                            Center(
+                              child: SizedBox(
+                                width: 163,
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: isLoading
+                                      ? null
+                                      : _changePassword,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _figmaButtonColor,
+                                    foregroundColor: _figmaDarkTeal,
+                                    disabledBackgroundColor:
+                                    _figmaButtonColor.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(25),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Change password button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed:
-                                isLoading ? null : _changePassword,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: mainGreen,
-                                  foregroundColor: darkGreen,
-                                  disabledBackgroundColor:
-                                  mainGreen.withValues(alpha: 0.5),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                ),
-                                child: isLoading
-                                    ? const SizedBox(
-                                  width: 23,
-                                  height: 23,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: darkGreen,
-                                  ),
-                                )
-                                    : Text(
-                                  'Change Password',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                  child: isLoading
+                                      ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child:
+                                    CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: _figmaDarkTeal,
+                                    ),
+                                  )
+                                      : Text(
+                                    'Change Password',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ),
