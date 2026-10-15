@@ -1,7 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/fingerprint_local_datasorce.dart';
 import '../../../data/datasources/fingerprintdatas.dart';
 import '../../../data/repositories/profile/fingerprint.dart';
@@ -15,25 +17,28 @@ import 'termscondition.dart';
 class SecurityScreen extends StatelessWidget {
   const SecurityScreen({super.key});
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final surfaceColor =
+    isDark ? AppColors.darkSurface : AppColors.lightGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.darkGreen;
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            _header(context),
+            _header(context, isDark, textColor),
             Expanded(
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(28, 34, 28, 20),
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(45),
                   ),
                 ),
@@ -45,12 +50,14 @@ class SecurityScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: darkGreen,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 14),
                     _tile(
                       title: 'Change Pin',
+                      isDark: isDark,
+                      textColor: textColor,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -62,6 +69,8 @@ class SecurityScreen extends StatelessWidget {
                     ),
                     _tile(
                       title: 'Fingerprint',
+                      isDark: isDark,
+                      textColor: textColor,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -71,7 +80,8 @@ class SecurityScreen extends StatelessWidget {
                                 FingerprintRepositoryImpl(
                                   biometricDataSource:
                                   FingerprintBiometricDataSource(),
-                                  localDataSource: FingerprintLocalDataSource(),
+                                  localDataSource:
+                                  FingerprintLocalDataSource(),
                                 ),
                               )..add(LoadFingerprint()),
                               child: const FingerprintScreen(),
@@ -82,6 +92,8 @@ class SecurityScreen extends StatelessWidget {
                     ),
                     _tile(
                       title: 'Terms And Conditions',
+                      isDark: isDark,
+                      textColor: textColor,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -101,7 +113,11 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _header(BuildContext context) {
+  Widget _header(
+      BuildContext context,
+      bool isDark,
+      Color textColor,
+      ) {
     return SizedBox(
       height: 100,
       child: Padding(
@@ -112,7 +128,10 @@ class SecurityScreen extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: isDark ? AppColors.darkText : AppColors.white,
+                ),
               ),
               Expanded(
                 child: Center(
@@ -121,7 +140,7 @@ class SecurityScreen extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: darkGreen,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -129,8 +148,8 @@ class SecurityScreen extends StatelessWidget {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightGreen,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -143,9 +162,9 @@ class SecurityScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.notifications_none,
-                    color: darkGreen,
+                    color: textColor,
                     size: 20,
                   ),
                 ),
@@ -157,11 +176,17 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _tile({required String title, required VoidCallback onTap}) {
+  Widget _tile({
+    required String title,
+    required VoidCallback onTap,
+    required bool isDark,
+    required Color textColor,
+  }) {
     return Column(
       children: [
         InkWell(
           onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
           child: SizedBox(
             height: 52,
             child: Row(
@@ -172,16 +197,23 @@ class SecurityScreen extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: darkGreen,
+                      color: textColor,
                     ),
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: darkGreen, size: 26),
+                Icon(
+                  Icons.chevron_right,
+                  color: textColor,
+                  size: 26,
+                ),
               ],
             ),
           ),
         ),
-        const Divider(height: 1, color: Color(0xFFDFF1E3)),
+        Divider(
+          height: 1,
+          color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+        ),
       ],
     );
   }
