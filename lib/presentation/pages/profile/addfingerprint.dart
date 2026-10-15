@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../bloc/profile/fingerprint/fingerprint_bloc.dart';
 import '../../bloc/profile/fingerprint/fingerprint_event.dart';
 import '../../bloc/profile/fingerprint/fingerprint_state.dart';
@@ -11,28 +11,34 @@ import '../notification/notification.dart';
 class AddFingerprintScreen extends StatelessWidget {
   const AddFingerprintScreen({super.key});
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-  static const Color softGreen = Color(0xFFDDF5E2);
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark
+        ? AppColors.darkBackground
+        : AppColors.primaryGreen;
+    final surface = isDark ? AppColors.darkSurface : AppColors.lightGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.darkGreen;
+    final secondaryColor =
+    isDark ? AppColors.darkSecondaryText : AppColors.darkGreen;
+    final buttonColor = isDark ? AppColors.darkCard : AppColors.softGreen;
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Column(
           children: [
             SizedBox(
-              height: 90,
+              height: 88,
               child: Row(
                 children: [
-                  const SizedBox(width: 15),
+                  const SizedBox(width: 12),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: isDark ? AppColors.darkText : AppColors.white,
+                      size: 23,
                     ),
                   ),
                   Expanded(
@@ -40,22 +46,24 @@ class AddFingerprintScreen extends StatelessWidget {
                       child: Text(
                         'Add Fingerprint',
                         style: GoogleFonts.poppins(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: darkGreen,
+                          // Figma: dark title on the teal header
+                          color: textColor,
                         ),
                       ),
                     ),
                   ),
                   Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: lightGreen,
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : AppColors.lightGreen,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       padding: EdgeInsets.zero,
+                      tooltip: 'Notifications',
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -64,25 +72,25 @@ class AddFingerprintScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.notifications_none,
-                        color: darkGreen,
+                        color: textColor,
                         size: 20,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 18),
+                  const SizedBox(width: 16),
                 ],
               ),
             ),
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(40),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(45),
                   ),
                 ),
                 child: BlocConsumer<FingerprintBloc, FingerprintState>(
@@ -110,82 +118,91 @@ class AddFingerprintScreen extends StatelessWidget {
                   builder: (context, state) {
                     final loading = state is FingerprintLoading;
 
-                    return Column(
-                      children: [
-                        const SizedBox(height: 42),
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: const BoxDecoration(
-                            color: mainGreen,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.fingerprint,
-                            size: 83,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Use Fingerprint To Access',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: darkGreen,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Use the biometric authentication configured on your device to enable fingerprint access.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 9,
-                            height: 1.5,
-                            color: darkGreen,
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 40,
-                          child: ElevatedButton(
-                            onPressed: loading
-                                ? null
-                                : () {
-                              context.read<FingerprintBloc>().add(
-                                EnableFingerprint(),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: softGreen,
-                              foregroundColor: darkGreen,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
-                              ),
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 48),
+                          Container(
+                            width: 134,
+                            height: 134,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
                             ),
-                            child: loading
-                                ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: darkGreen,
-                              ),
-                            )
-                                : Text(
-                              'Use Touch Id',
+                            child: const Icon(
+                              Icons.fingerprint,
+                              size: 92,
+                              color: AppColors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 38),
+                          Text(
+                            'Use Fingerprint To Access',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Padding(
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'Use the biometric authentication configured on your device to enable fingerprint access.',
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 9,
+                                height: 1.5,
+                                color: secondaryColor,
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 30),
-                      ],
+                          const SizedBox(height: 48),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: ElevatedButton(
+                              onPressed: loading
+                                  ? null
+                                  : () {
+                                context.read<FingerprintBloc>().add(
+                                  EnableFingerprint(),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: buttonColor,
+                                foregroundColor: textColor,
+                                disabledBackgroundColor:
+                                buttonColor.withValues(alpha: 0.6),
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                              ),
+                              child: loading
+                                  ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: textColor,
+                                ),
+                              )
+                                  : Text(
+                                'Use Touch Id',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -197,6 +214,10 @@ class AddFingerprintScreen extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Result screen + tick painter: intentionally UNCHANGED.
+// ---------------------------------------------------------------------------
 
 class FingerprintResultScreen extends StatefulWidget {
   final bool deleted;
@@ -213,10 +234,6 @@ class FingerprintResultScreen extends StatefulWidget {
 
 class _FingerprintResultScreenState extends State<FingerprintResultScreen>
     with SingleTickerProviderStateMixin {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
-
   late final AnimationController controller;
   late final Animation<double> circleAnimation;
   late final Animation<double> tickAnimation;
@@ -257,6 +274,15 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final animationColor =
+    isDark ? AppColors.darkText : AppColors.softGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.white;
+    final buttonColor =
+    isDark ? AppColors.darkCard : AppColors.lightGreen;
+
     final title = widget.deleted
         ? 'Fingerprint Has Been Successfully Deleted.'
         : 'Fingerprint Has Been Successfully Added.';
@@ -266,7 +292,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
         : 'Fingerprint access is now enabled for FinWise.';
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Center(
           child: AnimatedBuilder(
@@ -291,7 +317,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: lightGreen,
+                                  color: animationColor,
                                   width: 4,
                                 ),
                               ),
@@ -306,8 +332,8 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                                 child: Container(
                                   width: 9,
                                   height: 9,
-                                  decoration: const BoxDecoration(
-                                    color: lightGreen,
+                                  decoration: BoxDecoration(
+                                    color: animationColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -320,7 +346,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                                 child: CustomPaint(
                                   painter: FingerprintTickPainter(
                                     progress: tickAnimation.value,
-                                    color: lightGreen,
+                                    color: animationColor,
                                   ),
                                 ),
                               ),
@@ -335,7 +361,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                         title,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           height: 1.5,
@@ -349,7 +375,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                         subtitle,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 10,
                           height: 1.5,
                         ),
@@ -362,12 +388,12 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                         width: 165,
                         height: 40,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: lightGreen,
-                            foregroundColor: darkGreen,
+                            backgroundColor: buttonColor,
+                            foregroundColor: isDark
+                                ? AppColors.darkText
+                                : AppColors.darkGreen,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
@@ -418,7 +444,6 @@ class FingerprintTickPainter extends CustomPainter {
       ..lineTo(size.width * 0.84, size.height * 0.28);
 
     final metrics = path.computeMetrics().first;
-
     final animatedPath = metrics.extractPath(
       0,
       metrics.length * progress.clamp(0.0, 1.0),
