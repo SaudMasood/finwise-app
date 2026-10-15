@@ -1,3 +1,4 @@
+
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/local/profile_data_locl.dart';
 import '../../../data/datasources/remote/profile_datas.dart';
 import '../../../data/repositories/profile/profile_repository_impl.dart';
@@ -12,7 +14,6 @@ import '../../../domain/usecases/profile/profile_usecase.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../bloc/profile/profile_event.dart';
 import '../../bloc/profile/profile_state.dart';
-
 import '../notification/notification.dart';
 import 'editprofile.dart';
 import 'security.dart';
@@ -22,16 +23,6 @@ import '../logout/logout.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
-
-  // Menu tile colors (match Figma)
-  static const Color tileLight = Color(0xFF6DB6FF);
-  static const Color tileMid = Color(0xFF3299FF);
-  static const Color tileStrong = Color(0xFF0068FF);
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +52,18 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final backgroundColor =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final surfaceColor =
+    isDark ? AppColors.darkSurface : AppColors.lightGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.darkGreen;
+    final secondaryColor =
+    isDark ? AppColors.darkSecondaryText : AppColors.darkGreen;
+    final avatarBackground =
+    isDark ? AppColors.darkCard : AppColors.softGreen;
+
     return BlocConsumer<ProfileBloc, ProfileState>(
       listenWhen: (previous, current) =>
       previous.error != current.error ||
@@ -72,8 +75,9 @@ class _ProfileView extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
-              backgroundColor:
-              state.error != null ? Colors.red : ProfileScreen.darkGreen,
+              backgroundColor: state.error != null
+                  ? AppColors.error
+                  : AppColors.darkGreen,
             ),
           );
         }
@@ -92,7 +96,7 @@ class _ProfileView extends StatelessWidget {
         final shortId = uid.length > 8 ? uid.substring(0, 8) : uid;
 
         return Scaffold(
-          backgroundColor: ProfileScreen.mainGreen,
+          backgroundColor: backgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -103,13 +107,15 @@ class _ProfileView extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: () => Navigator.maybePop(context),
-                          child: const Padding(
-                            padding: EdgeInsets.only(top: 12),
-                            child: Icon(
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: IconButton(
+                            onPressed: () => Navigator.maybePop(context),
+                            icon: Icon(
                               Icons.arrow_back,
-                              color: Colors.white,
+                              color: isDark
+                                  ? AppColors.darkText
+                                  : AppColors.white,
                               size: 24,
                             ),
                           ),
@@ -123,7 +129,9 @@ class _ProfileView extends StatelessWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: ProfileScreen.darkGreen,
+                                  color: isDark
+                                      ? AppColors.darkText
+                                      : AppColors.darkGreen,
                                 ),
                               ),
                             ),
@@ -134,8 +142,10 @@ class _ProfileView extends StatelessWidget {
                           child: Container(
                             width: 30,
                             height: 30,
-                            decoration: const BoxDecoration(
-                              color: ProfileScreen.lightGreen,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.darkCard
+                                  : AppColors.lightGreen,
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
@@ -144,13 +154,14 @@ class _ProfileView extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const NotificationScreen(),
+                                    builder: (_) =>
+                                    const NotificationScreen(),
                                   ),
                                 );
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.notifications_none,
-                                color: ProfileScreen.darkGreen,
+                                color: textColor,
                                 size: 19,
                               ),
                             ),
@@ -160,7 +171,6 @@ class _ProfileView extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -168,17 +178,19 @@ class _ProfileView extends StatelessWidget {
                       Container(
                         width: double.infinity,
                         height: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: ProfileScreen.lightGreen,
-                          borderRadius: BorderRadius.only(
+                        decoration: BoxDecoration(
+                          color: surfaceColor,
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(45),
                             topRight: Radius.circular(45),
                           ),
                         ),
                         child: state.isLoading
-                            ? const Center(
+                            ? Center(
                           child: CircularProgressIndicator(
-                            color: ProfileScreen.mainGreen,
+                            color: isDark
+                                ? AppColors.lightGreen
+                                : AppColors.primaryGreen,
                           ),
                         )
                             : profile == null
@@ -186,10 +198,10 @@ class _ProfileView extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Unable to load profile.',
                                 style: TextStyle(
-                                  color: ProfileScreen.darkGreen,
+                                  color: textColor,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -217,7 +229,7 @@ class _ProfileView extends StatelessWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: ProfileScreen.darkGreen,
+                                  color: textColor,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -226,14 +238,15 @@ class _ProfileView extends StatelessWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: ProfileScreen.darkGreen,
+                                  color: secondaryColor,
                                 ),
                               ),
                               const SizedBox(height: 28),
                               _ProfileMenuItem(
                                 icon: Icons.person_outline,
                                 title: 'Edit Profile',
-                                color: ProfileScreen.tileLight,
+                                color: AppColors.blue,
+                                textColor: textColor,
                                 onTap: () async {
                                   await Navigator.push(
                                     context,
@@ -253,7 +266,8 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.verified_user_outlined,
                                 title: 'Security',
-                                color: ProfileScreen.tileMid,
+                                color: AppColors.strongBlue,
+                                textColor: textColor,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -267,7 +281,8 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.settings_outlined,
                                 title: 'Setting',
-                                color: ProfileScreen.tileStrong,
+                                color: AppColors.calendarBlue,
+                                textColor: textColor,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -281,7 +296,8 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.support_agent,
                                 title: 'Help',
-                                color: ProfileScreen.tileLight,
+                                color: AppColors.blue,
+                                textColor: textColor,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -295,50 +311,62 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.logout,
                                 title: 'Logout',
-                                color: ProfileScreen.tileMid,
-                                  onTap: () => showLogoutDialog(context),
+                                color: AppColors.strongBlue,
+                                textColor: textColor,
+                                onTap: () =>
+                                    showLogoutDialog(context),
                               ),
                             ],
                           ),
                         ),
                       ),
 
-                      // ---------- Avatar (overlaps header) ----------
                       Positioned(
                         top: -(_avatarSize / 2),
                         left: 0,
                         right: 0,
                         child: Center(
-                          child: Container(
-                            width: _avatarSize,
-                            height: _avatarSize,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: ProfileScreen.softGreen,
-                              border: Border.all(
-                                color: ProfileScreen.lightGreen,
-                                width: 3,
-                              ),
-                            ),
-                            child: profile?.imagePath != null &&
-                                File(profile!.imagePath!).existsSync()
-                                ? Image.file(
-                              File(profile.imagePath!),
-                              fit: BoxFit.cover,
-                            )
-                                : Image.asset(
-                              'assets/images/profile.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.person,
-                                size: 44,
-                                color: ProfileScreen.darkGreen,
+                          child: ClipOval(
+                            child: SizedBox(
+                              width: _avatarSize,
+                              height: _avatarSize,
+                              child: profile?.imagePath != null &&
+                                  File(profile!.imagePath!).existsSync()
+                                  ? Image.file(
+                                File(profile.imagePath!),
+                                width: _avatarSize,
+                                height: _avatarSize,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: avatarBackground,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 44,
+                                    color: textColor,
+                                  ),
+                                ),
+                              )
+                                  : Image.asset(
+                                'assets/images/profile.png',
+                                width: _avatarSize,
+                                height: _avatarSize,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: avatarBackground,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 44,
+                                    color: textColor,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
+
                     ],
                   ),
                 ),
@@ -356,12 +384,14 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.color,
+    required this.textColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final Color color;
+  final Color textColor;
   final VoidCallback onTap;
 
   @override
@@ -369,7 +399,10 @@ class _ProfileMenuItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 11),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 30,
+          vertical: 11,
+        ),
         child: Row(
           children: [
             Container(
@@ -381,7 +414,7 @@ class _ProfileMenuItem extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: Colors.white,
+                color: AppColors.white,
                 size: 25,
               ),
             ),
@@ -391,8 +424,14 @@ class _ProfileMenuItem extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: ProfileScreen.darkGreen,
+                color: textColor,
               ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right,
+              color: textColor,
+              size: 22,
             ),
           ],
         ),
