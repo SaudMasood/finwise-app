@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../core/prefrences/app_prefrences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/datasources/local/profile_data_locl.dart';
@@ -48,11 +49,6 @@ class _EditProfileView extends StatefulWidget {
 }
 
 class _EditProfileViewState extends State<_EditProfileView> {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
-
   static const double _avatarSize = 88;
 
   final nameController = TextEditingController();
@@ -68,6 +64,28 @@ class _EditProfileViewState extends State<_EditProfileView> {
   bool notification = true;
   bool darkTheme = false;
   bool settingsLoading = true;
+
+  bool get _isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get _primaryGreen => AppColors.primaryGreen;
+
+  // Fix: the outside area remains green in light mode.
+  Color get _backgroundColor =>
+      _isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  // Fix: do not rely on the theme surface, which may be white.
+  Color get _surfaceColor =>
+      _isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  Color get _textColor =>
+      _isDark ? AppColors.darkText : AppColors.darkGreen;
+
+  Color get _secondaryTextColor =>
+      _isDark ? AppColors.darkSecondaryText : AppColors.darkGreen;
+
+  Color get _fieldColor =>
+      _isDark ? AppColors.darkSearchField : AppColors.softGreen;
 
   @override
   void initState() {
@@ -88,7 +106,13 @@ class _EditProfileViewState extends State<_EditProfileView> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      if (mounted) setState(() => settingsLoading = false);
+      if (mounted) {
+        setState(() {
+          settingsLoading = false;
+          darkTheme =
+              AppTheme.themeMode.value == ThemeMode.dark;
+        });
+      }
       return;
     }
 
@@ -104,7 +128,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
       ]);
 
       final dark = results[0] as bool;
-      final settings = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+      final settings =
+      results[1] as DocumentSnapshot<Map<String, dynamic>>;
+
       final notifications =
           settings.data()?['notificationsEnabled'] as bool? ?? true;
 
@@ -117,8 +143,16 @@ class _EditProfileViewState extends State<_EditProfileView> {
       });
 
       AppTheme.setDarkMode(dark);
-    } catch (_) {
-      if (mounted) setState(() => settingsLoading = false);
+    } catch (e) {
+      debugPrint('Unable to load profile settings: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        darkTheme =
+            AppTheme.themeMode.value == ThemeMode.dark;
+        settingsLoading = false;
+      });
     }
   }
 
@@ -128,10 +162,16 @@ class _EditProfileViewState extends State<_EditProfileView> {
 
     try {
       final path = await localDataSource.getImagePath(user.uid);
+
       if (!mounted) return;
+
       setState(() => imagePath = path);
-    } catch (_) {
-      if (mounted) setState(() => imagePath = null);
+    } catch (e) {
+      debugPrint('Unable to load avatar: $e');
+
+      if (!mounted) return;
+
+      setState(() => imagePath = null);
     }
   }
 
@@ -158,28 +198,45 @@ class _EditProfileViewState extends State<_EditProfileView> {
 
     try {
       final path = await localDataSource.pickAndSaveImage(uid);
+
       if (!mounted) return;
 
       if (path != null) {
         setState(() => imagePath = path);
         _showMessage('Profile picture saved successfully');
       }
-    } catch (_) {
-      if (mounted) _showMessage('Unable to select profile picture');
+    } catch (e) {
+      debugPrint('Unable to select profile picture: $e');
+
+      if (mounted) {
+        _showMessage('Unable to select profile picture');
+      }
     } finally {
-      if (mounted) setState(() => imageLoading = false);
+      if (mounted) {
+        setState(() => imageLoading = false);
+      }
     }
   }
 
   Future<void> _changeNotifications(bool value) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+
+    if (user == null) {
+      _showMessage('Please log in to change notification settings.');
+      return;
+    }
 
     final oldValue = notification;
+
     setState(() => notification = value);
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('settings')
+          .doc('preferences')
+          .set({
         'notificationsEnabled': value,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -191,8 +248,11 @@ class _EditProfileViewState extends State<_EditProfileView> {
         await FirebaseMessaging.instance
             .unsubscribeFromTopic('finwise_notifications');
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Unable to update notifications: $e');
+
       if (!mounted) return;
+
       setState(() => notification = oldValue);
       _showMessage('Unable to update notification settings');
     }
@@ -200,20 +260,28 @@ class _EditProfileViewState extends State<_EditProfileView> {
 
   Future<void> _changeTheme(bool value) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
 
-    final oldValue = darkTheme;
+    if (user == null) {
+      _showMessage('Please log in to save theme settings.');
+      return;
+    }
+
+    final previousValue = darkTheme;
 
     setState(() => darkTheme = value);
     AppTheme.setDarkMode(value);
 
     try {
       await AppPreferences.saveDarkMode(user.uid, value);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Unable to save theme settings: $e');
+
       if (!mounted) return;
-      setState(() => darkTheme = oldValue);
-      AppTheme.setDarkMode(oldValue);
-      _showMessage('Unable to save theme settings');
+
+      setState(() => darkTheme = previousValue);
+      AppTheme.setDarkMode(previousValue);
+
+      _showMessage('Unable to save theme settings.');
     }
   }
 
@@ -234,13 +302,23 @@ class _EditProfileViewState extends State<_EditProfileView> {
     }
 
     context.read<ProfileBloc>().add(
-      UpdateProfile(name: name, email: email, phone: phone),
+      UpdateProfile(
+        name: name,
+        email: email,
+        phone: phone,
+      ),
     );
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor:
+        Theme.of(context).colorScheme.inverseSurface,
+      ),
     );
   }
 
@@ -252,12 +330,12 @@ class _EditProfileViewState extends State<_EditProfileView> {
           previous.message != current.message ||
           previous.error != current.error,
       listener: (context, state) {
-        if (state.profile != null) _loadFields(state.profile!);
+        if (state.profile != null) {
+          _loadFields(state.profile!);
+        }
 
         if (state.message != null && state.message!.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message!), backgroundColor: darkGreen),
-          );
+          _showMessage(state.message!);
 
           if (state.message!.contains('successfully')) {
             Navigator.pop(context, true);
@@ -270,7 +348,10 @@ class _EditProfileViewState extends State<_EditProfileView> {
       },
       builder: (context, state) {
         final profile = state.profile;
-        if (profile != null) _loadFields(profile);
+
+        if (profile != null) {
+          _loadFields(profile);
+        }
 
         final user = FirebaseAuth.instance.currentUser;
 
@@ -279,7 +360,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
             : (user?.email?.split('@').first ?? 'Your Name');
 
         return Scaffold(
-          backgroundColor: mainGreen,
+          backgroundColor: _backgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -290,21 +371,26 @@ class _EditProfileViewState extends State<_EditProfileView> {
                     children: [
                       Positioned.fill(
                         child: Container(
-                          decoration: const BoxDecoration(
-                            color: lightGreen,
-                            borderRadius: BorderRadius.vertical(
+                          decoration: BoxDecoration(
+                            color: _surfaceColor,
+                            borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(45),
                             ),
                           ),
                           child: state.isLoading
-                              ? const Center(
+                              ? Center(
                             child: CircularProgressIndicator(
-                              color: mainGreen,
+                              color: _primaryGreen,
                             ),
                           )
                               : profile == null
                               ? _retry(context)
-                              : _form(context, state, profile, displayName),
+                              : _form(
+                            context,
+                            state,
+                            profile,
+                            displayName,
+                          ),
                         ),
                       ),
                       if (profile != null)
@@ -312,7 +398,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
                           top: -(_avatarSize / 2),
                           left: 0,
                           right: 0,
-                          child: Center(child: _avatar(profile.uid)),
+                          child: Center(
+                            child: _avatar(context, profile.uid),
+                          ),
                         ),
                     ],
                   ),
@@ -326,17 +414,27 @@ class _EditProfileViewState extends State<_EditProfileView> {
   }
 
   Widget _header(BuildContext context) {
-    return SizedBox(
-      height: 125,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-        child: Align(
-          alignment: Alignment.topCenter,
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final headerTextColor =
+    isDark ? AppColors.darkText : AppColors.white;
+
+    return Container(
+      width: double.infinity,
+      color: isDark ? AppColors.darkBackground : AppColors.primaryGreen,
+      child: SizedBox(
+        height: 140,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
           child: Row(
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: headerTextColor,
+                ),
               ),
               Expanded(
                 child: Center(
@@ -345,20 +443,23 @@ class _EditProfileViewState extends State<_EditProfileView> {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: darkGreen,
+                      color: isDark ? AppColors.darkText : Colors.black,
                     ),
                   ),
                 ),
               ),
               Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkCard
+                      : AppColors.lightGreen,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
+                  tooltip: 'Notifications',
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -367,9 +468,11 @@ class _EditProfileViewState extends State<_EditProfileView> {
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.notifications_none,
-                    color: darkGreen,
+                    color: isDark
+                        ? AppColors.darkText
+                        : AppColors.darkGreen,
                     size: 20,
                   ),
                 ),
@@ -381,8 +484,10 @@ class _EditProfileViewState extends State<_EditProfileView> {
     );
   }
 
-  Widget _avatar(String uid) {
-    final hasImage = imagePath != null && File(imagePath!).existsSync();
+  Widget _avatar(BuildContext context, String uid) {
+    final hasImage =
+        imagePath != null && File(imagePath!).existsSync();
+    final theme = Theme.of(context);
 
     return GestureDetector(
       onTap: () => _changeAvatar(uid),
@@ -390,31 +495,39 @@ class _EditProfileViewState extends State<_EditProfileView> {
         width: _avatarSize,
         height: _avatarSize,
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Container(
-              width: _avatarSize,
-              height: _avatarSize,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: softGreen,
-                border: Border.all(color: lightGreen, width: 3),
-              ),
-              child: imageLoading
-                  ? const Center(
-                child: CircularProgressIndicator(color: mainGreen),
-              )
-                  : hasImage
-                  ? Image.file(
-                File(imagePath!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.person,
-                  size: 50,
-                  color: darkGreen,
+            ClipOval(
+              child: SizedBox(
+                width: _avatarSize,
+                height: _avatarSize,
+                child: Container(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  child: imageLoading
+                      ? Center(
+                    child: CircularProgressIndicator(
+                      color: _primaryGreen,
+                    ),
+                  )
+                      : hasImage
+                      ? Image.file(
+                    File(imagePath!),
+                    width: _avatarSize,
+                    height: _avatarSize,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.person,
+                      size: 50,
+                      color: _textColor,
+                    ),
+                  )
+                      : Icon(
+                    Icons.person,
+                    size: 50,
+                    color: _textColor,
+                  ),
                 ),
-              )
-                  : const Icon(Icons.person, size: 50, color: darkGreen),
+              ),
             ),
             Positioned(
               right: 0,
@@ -423,11 +536,14 @@ class _EditProfileViewState extends State<_EditProfileView> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: mainGreen,
+                  color: _primaryGreen,
                   shape: BoxShape.circle,
-                  border: Border.all(color: lightGreen, width: 2),
                 ),
-                child: const Icon(Icons.camera_alt, size: 12, color: darkGreen),
+                child: const Icon(
+                  Icons.camera_alt,
+                  size: 12,
+                  color: Colors.black,
+                ),
               ),
             ),
           ],
@@ -441,11 +557,15 @@ class _EditProfileViewState extends State<_EditProfileView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Unable to load profile'),
+          Text(
+            'Unable to load profile',
+            style: GoogleFonts.poppins(color: _textColor),
+          ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () =>
-                context.read<ProfileBloc>().add(const LoadProfile()),
+            onPressed: () {
+              context.read<ProfileBloc>().add(const LoadProfile());
+            },
             child: const Text('Retry'),
           ),
         ],
@@ -459,11 +579,17 @@ class _EditProfileViewState extends State<_EditProfileView> {
       UserProfile profile,
       String displayName,
       ) {
-    final shortId =
-    profile.uid.length > 8 ? profile.uid.substring(0, 8) : profile.uid;
+    final shortId = profile.uid.length > 8
+        ? profile.uid.substring(0, 8)
+        : profile.uid;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, _avatarSize / 2 + 12, 28, 30),
+      padding: const EdgeInsets.fromLTRB(
+        28,
+        _avatarSize / 2 + 12,
+        28,
+        30,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -475,7 +601,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: darkGreen,
+                    color: _textColor,
                   ),
                 ),
                 Text(
@@ -483,7 +609,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
                   style: GoogleFonts.poppins(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
-                    color: darkGreen,
+                    color: _textColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -495,7 +621,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: darkGreen,
+              color: _textColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -529,13 +655,13 @@ class _EditProfileViewState extends State<_EditProfileView> {
           const SizedBox(height: 14),
           Center(
             child: SizedBox(
-              width: 130,
-              height: 34,
+              width: 150,
+              height: 38,
               child: ElevatedButton(
                 onPressed: state.isSaving ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: mainGreen,
-                  foregroundColor: darkGreen,
+                  backgroundColor: _primaryGreen,
+                  foregroundColor: Colors.black,
                   elevation: 0,
                   padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
@@ -546,7 +672,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
                     ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
                 )
                     : Text(
                   'Update Profile',
@@ -571,41 +699,56 @@ class _EditProfileViewState extends State<_EditProfileView> {
         style: GoogleFonts.poppins(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: darkGreen,
+          color: _textColor,
         ),
       ),
     );
   }
 
+  // Smaller text field: height 42 -> 34. isDense + zero contentPadding
+  // keeps the text vertically centered inside the shorter box.
   Widget _input(
       TextEditingController controller,
       String hint, {
         TextInputType keyboardType = TextInputType.text,
       }) {
     return Container(
-      height: 38,
+      height: 34,
+      alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: softGreen.withValues(alpha: 0.8),
+        color: _fieldColor,
         borderRadius: BorderRadius.circular(10),
+        border: _isDark
+            ? Border.all(color: AppColors.darkDivider)
+            : null,
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: GoogleFonts.poppins(fontSize: 10.5, color: darkGreen),
+        style: GoogleFonts.poppins(
+          fontSize: 10.5,
+          color: _textColor,
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.poppins(
             fontSize: 10,
-            color: darkGreen.withValues(alpha: 0.6),
+            color: _secondaryTextColor.withValues(alpha: 0.7),
           ),
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
           border: InputBorder.none,
         ),
       ),
     );
   }
 
-  Widget _switchRow(String text, bool value, ValueChanged<bool>? onChanged) {
+  Widget _switchRow(
+      String text,
+      bool value,
+      ValueChanged<bool>? onChanged,
+      ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -616,20 +759,24 @@ class _EditProfileViewState extends State<_EditProfileView> {
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: darkGreen,
+              color: _textColor,
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            thumbColor: const WidgetStatePropertyAll(Colors.white),
-            trackColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                  ? mainGreen
-                  : const Color(0xFF8EE5CC),
+            activeThumbColor: AppColors.white,
+            activeTrackColor: _primaryGreen,
+            inactiveThumbColor: AppColors.white,
+            inactiveTrackColor: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.25),
+            trackOutlineColor:
+            const WidgetStatePropertyAll<Color>(
+              Colors.transparent,
             ),
-            trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
           ),
         ],
       ),
