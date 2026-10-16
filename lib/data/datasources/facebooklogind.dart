@@ -10,8 +10,9 @@ class FacebookLoginDataSource {
   });
 
   Future<UserCredential> loginWithFacebook() async {
-    final LoginResult result =
-    await FacebookAuth.instance.login();
+    final LoginResult result = await FacebookAuth.instance.login(
+      permissions: ['public_profile'],
+    );
 
     if (result.status != LoginStatus.success) {
       if (result.status == LoginStatus.cancelled) {
