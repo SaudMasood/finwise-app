@@ -3,14 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../color/app_color.dart';
 import '../prefrences/app_prefrences.dart';
 
 class AppTheme {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
-  static const Color blue = Color(0xFF4DA3FF);
+  AppTheme._();
 
   static final ValueNotifier<ThemeMode> themeMode =
   ValueNotifier<ThemeMode>(ThemeMode.light);
@@ -19,24 +16,29 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: lightGreen,
+      scaffoldBackgroundColor: AppColors.lightBackground,
+      primaryColor: AppColors.primaryGreen,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: mainGreen,
+        seedColor: AppColors.primaryGreen,
         brightness: Brightness.light,
-        primary: mainGreen,
-        secondary: blue,
-        surface: Colors.white,
+        primary: AppColors.primaryGreen,
+        secondary: AppColors.blue,
+        surface: AppColors.lightSurface,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: mainGreen,
-        foregroundColor: darkGreen,
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: AppColors.darkGreen,
+        elevation: 0,
       ),
-      cardColor: Colors.white,
-      dividerColor: softGreen,
+      cardColor: AppColors.lightCard,
+      dividerColor: AppColors.lightDivider,
+      iconTheme: const IconThemeData(
+        color: AppColors.lightText,
+      ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
-              ? mainGreen
+              ? AppColors.primaryGreen
               : Colors.grey;
         }),
       ),
@@ -47,24 +49,29 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF121A19),
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      primaryColor: AppColors.primaryGreen,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: mainGreen,
+        seedColor: AppColors.primaryGreen,
         brightness: Brightness.dark,
-        primary: mainGreen,
-        secondary: blue,
-        surface: const Color(0xFF1D2927),
+        primary: AppColors.primaryGreen,
+        secondary: AppColors.blue,
+        surface: AppColors.darkSurface,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: const Color(0xFF1D2927),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: AppColors.darkText,
+        elevation: 0,
       ),
-      cardColor: const Color(0xFF1D2927),
-      dividerColor: const Color(0xFF344541),
+      cardColor: AppColors.darkCard,
+      dividerColor: AppColors.darkDivider,
+      iconTheme: const IconThemeData(
+        color: AppColors.darkText,
+      ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
-              ? mainGreen
+              ? AppColors.primaryGreen
               : Colors.grey;
         }),
       ),
@@ -72,16 +79,14 @@ class AppTheme {
   }
 
   static void setDarkMode(bool enabled) {
-    themeMode.value =
-    enabled ? ThemeMode.dark : ThemeMode.light;
+    themeMode.value = enabled ? ThemeMode.dark : ThemeMode.light;
   }
-
 
   static Future<void> loadSavedTheme(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool('dark_mode_$uid') ?? false;
 
-    themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
+    setDarkMode(isDark);
   }
 
   static Future<void> initialize() async {
@@ -92,5 +97,4 @@ class AppTheme {
       setDarkMode(isDark);
     }
   }
-
 }

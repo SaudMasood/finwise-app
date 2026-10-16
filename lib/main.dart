@@ -47,7 +47,9 @@ Future<void> main() async {
 
     if (body.isNotEmpty || message.notification?.title != null) {
       await LocalNotificationService.instance.showNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647),
+        id: DateTime.now()
+            .millisecondsSinceEpoch
+            .remainder(2147483647),
         title: title,
         body: body,
         type: type,

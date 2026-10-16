@@ -1,10 +1,11 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finwise/presentation/pages/help/suport_chat.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/support_datasorce.dart';
 import '../../../data/repositories/help/support_repo_impl.dart';
 import '../../../domain/entities/help/support_chat.dart';
@@ -14,14 +15,10 @@ import '../../bloc/help/support/support_bloc.dart';
 import '../../bloc/help/support/support_event.dart';
 import '../../bloc/help/support/support_state.dart';
 import '../notification/notification.dart';
+import 'suport_chat.dart';
 
 class OnlineSupportScreen extends StatelessWidget {
   const OnlineSupportScreen({super.key});
-
-  static const Color green = Color(0xFF00D09E);
-  static const Color background = Color(0xFFF1FFF3);
-  static const Color cardGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +46,27 @@ class OnlineSupportScreen extends StatelessWidget {
 class _SupportHistoryView extends StatelessWidget {
   const _SupportHistoryView();
 
-  static const Color green = OnlineSupportScreen.green;
-  static const Color background = OnlineSupportScreen.background;
-  static const Color cardGreen = OnlineSupportScreen.cardGreen;
-  static const Color darkGreen = OnlineSupportScreen.darkGreen;
-
   @override
   Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final background = isDark
+        ? AppColors.darkBackground
+        : AppColors.primaryGreen;
+    final surface = isDark
+        ? AppColors.darkSurface
+        : AppColors.lightGreen;
+    final cardColor = isDark
+        ? AppColors.darkCard
+        : AppColors.softGreen;
+    final textColor = isDark
+        ? AppColors.darkText
+        : AppColors.darkGreen;
+    final secondaryText = isDark
+        ? AppColors.darkSecondaryText
+        : AppColors.lightSecondaryText;
+
     return BlocConsumer<SupportBloc, SupportState>(
       listener: (context, state) {
         if (state.errorMessage != null) {
@@ -66,6 +77,7 @@ class _SupportHistoryView extends StatelessWidget {
 
         if (state.selectedChatId != null) {
           final chatId = state.selectedChatId!;
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!context.mounted) return;
 
@@ -82,51 +94,86 @@ class _SupportHistoryView extends StatelessWidget {
         final bloc = context.read<SupportBloc>();
 
         return Scaffold(
-          backgroundColor: green,
+          backgroundColor: background,
           body: SafeArea(
             child: Column(
               children: [
-                _header(context),
+                _header(
+                  context,
+                  isDark: isDark,
+                  textColor: textColor,
+                  surface: surface,
+                ),
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                    decoration: const BoxDecoration(
-                      color: background,
-                      borderRadius: BorderRadius.vertical(
+                    padding: const EdgeInsets.fromLTRB(
+                      24, 28, 24, 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(45),
                       ),
                     ),
                     child: state.isLoading
                         ? const Center(
-                      child: CircularProgressIndicator(color: green),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
                     )
                         : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
                       children: [
-                        _sectionTitle('Active Chats'),
+                        _sectionTitle(
+                          'Active Chats',
+                          textColor,
+                        ),
                         Expanded(
                           child: ListView(
                             padding: EdgeInsets.zero,
                             children: [
                               for (final chat
-                              in state.chats.where((c) => c.isActive))
-                                _chatTile(context, chat),
+                              in state.chats.where(
+                                    (c) => c.isActive,
+                              ))
+                                _chatTile(
+                                  context,
+                                  chat,
+                                  cardColor: cardColor,
+                                  iconBackground: background,
+                                  textColor: textColor,
+                                  secondaryText: secondaryText,
+                                ),
                               const SizedBox(height: 14),
-                              _sectionTitle('Ended Chats'),
-                              for (final chat in state.chats
-                                  .where((c) => !c.isActive))
-                                _chatTile(context, chat),
+                              _sectionTitle(
+                                'Ended Chats',
+                                textColor,
+                              ),
+                              for (final chat
+                              in state.chats.where(
+                                    (c) => !c.isActive,
+                              ))
+                                _chatTile(
+                                  context,
+                                  chat,
+                                  cardColor: cardColor,
+                                  iconBackground: background,
+                                  textColor: textColor,
+                                  secondaryText: secondaryText,
+                                ),
                               if (state.chats.isEmpty)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding:
+                                  const EdgeInsets.symmetric(
                                     vertical: 24,
                                   ),
                                   child: Text(
                                     'No chats yet. Start a new chat!',
                                     style: GoogleFonts.poppins(
                                       fontSize: 11,
-                                      color: darkGreen,
+                                      color: secondaryText,
                                     ),
                                   ),
                                 ),
@@ -136,12 +183,14 @@ class _SupportHistoryView extends StatelessWidget {
                         const SizedBox(height: 12),
                         Center(
                           child: SizedBox(
-                            width: 165,
-                            height: 38,
+                            width: 175,
+                            height: 42,
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: green,
-                                foregroundColor: darkGreen,
+                              style:
+                              ElevatedButton.styleFrom(
+                                backgroundColor:
+                                AppColors.primaryGreen,
+                                foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: const StadiumBorder(),
                               ),
@@ -174,63 +223,68 @@ class _SupportHistoryView extends StatelessWidget {
     );
   }
 
-  Widget _header(BuildContext context) {
+  Widget _header(
+      BuildContext context, {
+        required bool isDark,
+        required Color textColor,
+        required Color surface,
+      }) {
     return SizedBox(
       height: 100,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDark ? textColor : Colors.white,
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Online Support',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: darkGreen,
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Online Support',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? textColor : Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: surface,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationScreen(),
                     ),
-                  ),
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications_none,
+                  size: 20,
+                  color: textColor,
                 ),
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: background,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    size: 20,
-                    color: darkGreen,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String text) {
+  Widget _sectionTitle(String text, Color textColor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -238,15 +292,22 @@ class _SupportHistoryView extends StatelessWidget {
         style: GoogleFonts.poppins(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: darkGreen,
+          color: textColor,
         ),
       ),
     );
   }
 
-  Widget _chatTile(BuildContext context, SupportChat chat) {
+  Widget _chatTile(
+      BuildContext context,
+      SupportChat chat, {
+        required Color cardColor,
+        required Color iconBackground,
+        required Color textColor,
+        required Color secondaryText,
+      }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         if (!chat.isActive) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -270,8 +331,8 @@ class _SupportHistoryView extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: cardGreen,
-          borderRadius: BorderRadius.circular(10),
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
@@ -279,13 +340,13 @@ class _SupportHistoryView extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: green,
+                color: iconBackground,
                 borderRadius: BorderRadius.circular(11),
               ),
               child: const Icon(
                 Icons.support_agent,
                 size: 26,
-                color: darkGreen,
+                color: AppColors.primaryGreen,
               ),
             ),
             const SizedBox(width: 12),
@@ -298,17 +359,24 @@ class _SupportHistoryView extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: darkGreen,
+                      color: textColor,
                     ),
                   ),
                   Text(
                     chat.preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(fontSize: 10, color: darkGreen),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: secondaryText,
+                    ),
                   ),
                 ],
               ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: secondaryText,
             ),
           ],
         ),

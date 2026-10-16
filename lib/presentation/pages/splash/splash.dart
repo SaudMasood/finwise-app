@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../luncher/luncher.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,15 +18,18 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // ---- Tweak these ----
-  static const _waitBeforeMove = Duration(milliseconds: 1500); // splash stays
-  static const _moveDuration = Duration(milliseconds: 2000); // icon moves up
-  static const _fadeDuration = Duration(milliseconds: 700); // final dissolve
-  static const double _moveUp = 126; // how far the logo goes up (x scale)
-  static const double _grow = 1.2; // logo gets bigger while moving
+  // Animation settings
+  static const Duration _waitBeforeMove =
+  Duration(milliseconds: 1500);
 
-  static const _splashGreen = Color(0xFF05C9A5);
-  static const _launchBg = Color(0xFFF1FFF3);
+  static const Duration _moveDuration =
+  Duration(milliseconds: 2000);
+
+  static const Duration _fadeDuration =
+  Duration(milliseconds: 700);
+
+  static const double _moveUp = 126;
+  static const double _grow = 1.2;
 
   late final AnimationController _controller;
   late final Animation<double> _t;
@@ -33,29 +37,48 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: _moveDuration);
-    _t = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: _moveDuration,
+    );
+
+    _t = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+
     _start();
   }
 
   Future<void> _start() async {
     await Future.delayed(_waitBeforeMove);
+
     if (!mounted) return;
 
-    // 1) Logo + title slide up to the launcher position
+    // 1. Move the logo and title upward.
     await _controller.forward();
+
     if (!mounted) return;
 
-    // 2) Then dissolve into the launcher screen
+    // 2. Fade into the next screen.
     final user = FirebaseAuth.instance.currentUser;
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         transitionDuration: _fadeDuration,
-        pageBuilder: (_, __, ___) =>
-        user != null ? const LoginScreen() : const LaunchScreen(),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
+        pageBuilder: (_, __, ___) {
+          return user != null
+              ? const LoginScreen()
+              : const LaunchScreen();
+        },
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -79,12 +102,19 @@ class _SplashScreenState extends State<SplashScreen>
         final t = _t.value;
 
         return Scaffold(
-          // green -> mint while moving
-          backgroundColor: Color.lerp(_splashGreen, _launchBg, t),
+          // Green changes to mint during the animation.
+          backgroundColor: Color.lerp(
+            AppColors.primaryGreen,
+            AppColors.lightGreen,
+            t,
+          ),
           body: SafeArea(
             child: Center(
               child: Transform.translate(
-                offset: Offset(0, -_moveUp * scale * t),
+                offset: Offset(
+                  0,
+                  -_moveUp * scale * t,
+                ),
                 child: Transform.scale(
                   scale: 1 + (_grow - 1) * t,
                   child: Column(
@@ -101,8 +131,13 @@ class _SplashScreenState extends State<SplashScreen>
                         style: GoogleFonts.poppins(
                           fontSize: (width * 0.085).clamp(32.0, 38.0),
                           fontWeight: FontWeight.w600,
-                          // white -> green while moving
-                          color: Color.lerp(Colors.white, _splashGreen, t),
+
+                          // White changes to green during the animation.
+                          color: Color.lerp(
+                            AppColors.white,
+                            AppColors.primaryGreen,
+                            t,
+                          ),
                           height: 1,
                         ),
                       ),

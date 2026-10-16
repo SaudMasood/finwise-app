@@ -1,10 +1,10 @@
-import 'package:finwise/presentation/pages/auth/security_fingerprint.dart';
-import 'package:finwise/presentation/pages/auth/signup_page.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../core/wigit/authn_wid.dart';
 import '../../../data/datasources/facebooklogind.dart';
 import '../../../data/datasources/goglelogindatas.dart';
@@ -16,6 +16,9 @@ import '../../bloc/auth/login/login_event.dart';
 import '../../bloc/auth/login/login_state.dart';
 import '../MainScreen/mainscreen.dart';
 import 'forget.dart';
+import 'security_fingerprint.dart';
+import 'signup_page.dart';
+
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -23,32 +26,33 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) {
+        final auth = FirebaseAuth.instance;
+
         final loginDataSource = LoginDataSource(
-          firebaseAuth: FirebaseAuth.instance,
+          firebaseAuth: auth,
         );
-        final googleLoginDataSource = GoogleLoginDataSource(
-          firebaseAuth: FirebaseAuth.instance,
+        final googleDataSource = GoogleLoginDataSource(
+          firebaseAuth: auth,
         );
-        final facebookLoginDataSource = FacebookLoginDataSource(
-          firebaseAuth: FirebaseAuth.instance,
+        final facebookDataSource = FacebookLoginDataSource(
+          firebaseAuth: auth,
         );
 
-        final authRepository = AuthRepositoryImpl(
+        final repository = AuthRepositoryImpl(
           loginDataSource: loginDataSource,
-          googleLoginDataSource: googleLoginDataSource,
-          facebookLoginDataSource: facebookLoginDataSource,
+          googleLoginDataSource: googleDataSource,
+          facebookLoginDataSource: facebookDataSource,
         );
 
-        return LoginBloc(loginUseCase: LoginUseCase(repository: authRepository));
+        return LoginBloc(
+          loginUseCase: LoginUseCase(repository: repository),
+        );
       },
       child: const LoginView(),
     );
   }
 }
 
-// -----------------------------------------------------
-// View: the UI
-// -----------------------------------------------------
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -69,32 +73,40 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
-  // Called when "Log In" is pressed
   void login() {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password.')),
+        const SnackBar(
+          content: Text('Please enter email and password.'),
+        ),
       );
       return;
     }
 
     context.read<LoginBloc>().add(
-      LoginButtonPressed(email: email, password: password),
+      LoginButtonPressed(
+        email: email,
+        password: password,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Listen to login result: success -> main screen, failure -> message
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+
     return BlocListener<LoginBloc, LoginState>(
       listener: (context, state) {
         if (state is LoginSuccess) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
+            MaterialPageRoute(
+              builder: (_) => const MainScreen(),
+            ),
           );
         }
 
@@ -109,18 +121,15 @@ class _LoginViewState extends State<LoginView> {
         child: Column(
           children: [
             const SizedBox(height: 50),
-
             AuthField(
               label: 'Username Or Email',
               hint: 'example@example.com',
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-
-            // Password
             AuthField(
               label: 'Password',
-              hint: '●●●●●●●●',
+              hint: 'Enter password',
               controller: passwordController,
               isPassword: true,
               hidden: !isPasswordVisible,
@@ -130,10 +139,29 @@ class _LoginViewState extends State<LoginView> {
                 });
               },
             ),
-
-            const SizedBox(height: 40),
-
-            // Log In button (shows loading spinner)
+            const SizedBox(height: 30),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Forgot Password?',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             BlocBuilder<LoginBloc, LoginState>(
               builder: (context, state) {
                 return GreenButton(
@@ -143,32 +171,7 @@ class _LoginViewState extends State<LoginView> {
                 );
               },
             ),
-
-            const SizedBox(height: 10),
-
-            // Forgot password
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ForgotPasswordScreen(),
-                  ),
-                );
-              },
-              child: Text(
-                'Forgot Password?',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: dark,
-                ),
-              ),
-            ),
-
             const SizedBox(height: 12),
-
-            // Sign Up button
             GreenButton(
               text: 'Sign Up',
               filled: false,
@@ -176,20 +179,18 @@ class _LoginViewState extends State<LoginView> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CreateAccountScreen(),
+                    builder: (_) => const CreateAccountScreen(),
                   ),
                 );
               },
             ),
-
             const SizedBox(height: 22),
-
             GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SecurityFingerprintScreen(),
+                    builder: (_) => const SecurityFingerprintScreen(),
                   ),
                 );
               },
@@ -198,29 +199,32 @@ class _LoginViewState extends State<LoginView> {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: dark,
+                    color: textColor,
                   ),
-                  children: const [
-                    TextSpan(text: 'Use '),
-                    TextSpan(text: 'Fingerprint', style: TextStyle(color: blue)),
-                    TextSpan(text: ' To Access'),
+                  children: [
+                    const TextSpan(text: 'Use '),
+                    TextSpan(
+                      text: 'Fingerprint',
+                      style: TextStyle(color: AppColors.blue),
+                    ),
+                    const TextSpan(text: ' To Access'),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 22),
-
-            // Facebook and Google
             SocialRow(
               onFacebook: () {
-                context.read<LoginBloc>().add(const FacebookLoginButtonPressed());
+                context.read<LoginBloc>().add(
+                  const FacebookLoginButtonPressed(),
+                );
               },
               onGoogle: () {
-                context.read<LoginBloc>().add(const GoogleLoginButtonPressed());
+                context.read<LoginBloc>().add(
+                  const GoogleLoginButtonPressed(),
+                );
               },
             ),
-
             const SizedBox(height: 18),
             BottomText(
               normalText: 'Don’t have an account? ',
@@ -229,12 +233,11 @@ class _LoginViewState extends State<LoginView> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CreateAccountScreen(),
+                    builder: (_) => const CreateAccountScreen(),
                   ),
                 );
               },
             ),
-
             const SizedBox(height: 30),
           ],
         ),

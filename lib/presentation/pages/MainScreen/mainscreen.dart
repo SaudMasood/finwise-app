@@ -1,6 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/color/app_color.dart';
 import '../analytics/analytics_page.dart';
 import '../categories/categories.dart';
 import '../home/home_page.dart';
@@ -16,9 +18,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color softGreen = Color(0xFFDDF5E2);
-
   final List<GlobalKey<NavigatorState>> _navKeys =
   List.generate(5, (_) => GlobalKey<NavigatorState>());
 
@@ -70,7 +69,7 @@ class _MainScreenState extends State<MainScreen> {
     return Navigator(
       key: _navKeys[index],
       onGenerateRoute: (settings) {
-        return MaterialPageRoute(
+        return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => _rootFor(index),
         );
@@ -105,7 +104,9 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onTabTap(int index) {
     if (index == currentIndex && !showSavings) {
-      _navKeys[index].currentState?.popUntil((route) => route.isFirst);
+      _navKeys[index].currentState?.popUntil(
+            (route) => route.isFirst,
+      );
       return;
     }
 
@@ -117,6 +118,15 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final navigationBackground = isDark
+        ? AppColors.darkSurface
+        : AppColors.softGreen;
+
+    final selectedBackground = AppColors.primaryGreen;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -124,6 +134,9 @@ class _MainScreenState extends State<MainScreen> {
         _handleBack();
       },
       child: Scaffold(
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         body: Stack(
           children: [
             Positioned.fill(
@@ -146,12 +159,20 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            color: softGreen,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: navigationBackground,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(35),
               topRight: Radius.circular(35),
             ),
+            border: isDark
+                ? Border(
+              top: BorderSide(
+                color: AppColors.darkDivider,
+                width: 0.5,
+              ),
+            )
+                : null,
           ),
           child: SafeArea(
             child: Padding(
@@ -195,16 +216,21 @@ class _MainScreenState extends State<MainScreen> {
     required int index,
     required String icon,
   }) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
     final selected = currentIndex == index;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _onTabTap(index),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: selected ? mainGreen : Colors.transparent,
+          color: selected
+              ? AppColors.primaryGreen
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Center(
@@ -212,6 +238,14 @@ class _MainScreenState extends State<MainScreen> {
             icon,
             width: 27,
             height: 27,
+            // Preserve original icon colors in light mode.
+            // Tint icons in dark mode for better visibility.
+            color: isDark && !selected
+                ? AppColors.darkText
+                : null,
+            colorBlendMode: isDark && !selected
+                ? BlendMode.srcIn
+                : null,
           ),
         ),
       ),

@@ -1,7 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../bloc/local_noti/local_bloc.dart';
 import '../../bloc/local_noti/local_event.dart';
 import '../../bloc/local_noti/local_state.dart';
@@ -9,11 +11,6 @@ import '../notification/notification.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
-
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-  static const Color offTrack = Color(0xFFC9F0E1);
 
   static const Map<String, String> labels = {
     'generalNotification': 'General Notification',
@@ -26,28 +23,37 @@ class NotificationSettingsScreen extends StatelessWidget {
     'lowBalanceAlerts': 'Low Balance Alerts',
   };
 
-  static TextStyle _text(
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  TextStyle _text(
+      BuildContext context,
       double size, {
         FontWeight weight = FontWeight.w400,
-        Color color = darkGreen,
+        Color? color,
       }) {
+    final isDark = _isDark(context);
+
     return GoogleFonts.poppins(
       fontSize: size,
       fontWeight: weight,
-      color: color,
+      color: color ??
+          (isDark ? AppColors.darkText : AppColors.darkGreen),
     );
   }
 
   Widget _header(BuildContext context) {
+    final isDark = _isDark(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 24, 22),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back,
-              color: Colors.white,
+              color: isDark ? AppColors.darkText : AppColors.white,
               size: 24,
             ),
           ),
@@ -55,15 +61,21 @@ class NotificationSettingsScreen extends StatelessWidget {
             child: Center(
               child: Text(
                 'Notification Settings',
-                style: _text(17, weight: FontWeight.w600),
+                textAlign: TextAlign.center,
+                style: _text(
+                  context,
+                  17,
+                  weight: FontWeight.w600,
+                  color: isDark ? AppColors.darkText : AppColors.white,
+                ),
               ),
             ),
           ),
           Container(
             width: 38,
             height: 38,
-            decoration: const BoxDecoration(
-              color: lightGreen,
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : AppColors.lightGreen,
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -76,9 +88,9 @@ class NotificationSettingsScreen extends StatelessWidget {
                   ),
                 );
               },
-              icon: const Icon(
+              icon: Icon(
                 Icons.notifications_none_rounded,
-                color: darkGreen,
+                color: isDark ? AppColors.darkText : AppColors.darkGreen,
                 size: 22,
               ),
             ),
@@ -95,19 +107,29 @@ class NotificationSettingsScreen extends StatelessWidget {
       NotificationSettingsState state,
       bool masterEnabled,
       ) {
+    final isDark = _isDark(context);
     final value = state.settings[key] ?? true;
     final isMaster = key == 'generalNotification';
     final isSaving = state.savingKeys.contains(key);
     final enabled = isMaster || masterEnabled;
 
     return SizedBox(
-      height: 48,
+      height: 52,
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: _text(11.5, weight: FontWeight.w500),
+              style: _text(
+                context,
+                11.5,
+                weight: FontWeight.w500,
+                color: enabled
+                    ? (isDark ? AppColors.darkText : AppColors.darkGreen)
+                    : (isDark
+                    ? AppColors.darkSecondaryText
+                    : AppColors.darkGreen.withValues(alpha: 0.5)),
+              ),
             ),
           ),
           if (isSaving)
@@ -116,7 +138,7 @@ class NotificationSettingsScreen extends StatelessWidget {
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: mainGreen,
+                color: AppColors.primaryGreen,
               ),
             )
           else
@@ -125,16 +147,21 @@ class NotificationSettingsScreen extends StatelessWidget {
               child: Switch(
                 value: value,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                thumbColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.selected)
-                      ? Colors.white
-                      : mainGreen,
-                ),
-                trackColor: WidgetStateProperty.resolveWith(
-                      (states) => states.contains(WidgetState.selected)
-                      ? mainGreen
-                      : offTrack,
-                ),
+                thumbColor: WidgetStateProperty.resolveWith((states) {
+                  return states.contains(WidgetState.selected)
+                      ? AppColors.white
+                      : (isDark
+                      ? AppColors.darkSecondaryText
+                      : AppColors.primaryGreen);
+                }),
+                trackColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.primaryGreen;
+                  }
+                  return isDark
+                      ? AppColors.darkDivider
+                      : AppColors.lightDivider;
+                }),
                 trackOutlineColor:
                 WidgetStateProperty.all(Colors.transparent),
                 onChanged: enabled
@@ -154,11 +181,18 @@ class NotificationSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _content(BuildContext context, NotificationSettingsState state) {
+  Widget _content(
+      BuildContext context,
+      NotificationSettingsState state,
+      ) {
+    final isDark = _isDark(context);
+
     if (state.status == NotificationSettingsStatus.loading ||
         state.status == NotificationSettingsStatus.initial) {
       return const Center(
-        child: CircularProgressIndicator(color: mainGreen),
+        child: CircularProgressIndicator(
+          color: AppColors.primaryGreen,
+        ),
       );
     }
 
@@ -173,7 +207,7 @@ class NotificationSettingsScreen extends StatelessWidget {
               Text(
                 state.errorMessage ?? 'Unable to load settings.',
                 textAlign: TextAlign.center,
-                style: _text(12),
+                style: _text(context, 12),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -182,6 +216,10 @@ class NotificationSettingsScreen extends StatelessWidget {
                       .read<NotificationSettingsBloc>()
                       .add(const LoadNotificationSettings());
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.darkGreen,
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -190,7 +228,8 @@ class NotificationSettingsScreen extends StatelessWidget {
       );
     }
 
-    final masterEnabled = state.settings['generalNotification'] == true;
+    final masterEnabled =
+        state.settings['generalNotification'] == true;
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -213,7 +252,11 @@ class NotificationSettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             state.errorMessage!,
-            style: _text(11, color: Colors.red.shade700),
+            style: _text(
+              context,
+              11,
+              color: AppColors.error,
+            ),
           ),
         ],
       ],
@@ -222,8 +265,11 @@ class NotificationSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDark(context);
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor:
+      isDark ? AppColors.darkBackground : AppColors.primaryGreen,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -232,9 +278,11 @@ class NotificationSettingsScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurface
+                      : AppColors.lightGreen,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(50),
                   ),
                 ),
@@ -250,6 +298,10 @@ class NotificationSettingsScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(state.errorMessage!),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: isDark
+                                ? AppColors.darkCard
+                                : AppColors.darkGreen,
                           ),
                         );
                       }

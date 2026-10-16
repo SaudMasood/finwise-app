@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
+
 class PinSuccessScreen extends StatefulWidget {
   const PinSuccessScreen({super.key});
 
@@ -13,9 +15,6 @@ class PinSuccessScreen extends StatefulWidget {
 
 class _PinSuccessScreenState extends State<PinSuccessScreen>
     with SingleTickerProviderStateMixin {
-  static const mainGreen = Color(0xFF00D09E);
-  static const lightGreen = Color(0xFFF1FFF3);
-
   late final AnimationController _tickController;
   late final Animation<double> _tickScale;
 
@@ -48,16 +47,11 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
         }
 
         if (_dotCount < 3) {
-          setState(() {
-            _dotCount++;
-          });
+          setState(() => _dotCount++);
         } else {
           timer.cancel();
 
-          setState(() {
-            _showTick = true;
-          });
-
+          setState(() => _showTick = true);
           _tickController.forward();
         }
       },
@@ -67,9 +61,7 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
       const Duration(seconds: 5),
           () {
         if (mounted) {
-          Navigator.of(context).popUntil(
-                (route) => route.isFirst,
-          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },
     );
@@ -85,8 +77,15 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final accent =
+    isDark ? AppColors.darkText : AppColors.lightGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.white;
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Center(
           child: Column(
@@ -98,7 +97,7 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: lightGreen,
+                    color: accent,
                     width: 5,
                   ),
                 ),
@@ -117,9 +116,9 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
                         ? ScaleTransition(
                       key: const ValueKey('tick'),
                       scale: _tickScale,
-                      child: const Icon(
+                      child: Icon(
                         Icons.check,
-                        color: lightGreen,
+                        color: accent,
                         size: 60,
                       ),
                     )
@@ -129,7 +128,7 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
                       style: GoogleFonts.poppins(
                         fontSize: 42,
                         fontWeight: FontWeight.w600,
-                        color: lightGreen,
+                        color: accent,
                       ),
                     ),
                   ),
@@ -143,7 +142,7 @@ class _PinSuccessScreenState extends State<PinSuccessScreen>
                   fontSize: 14,
                   height: 1.45,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               ),
             ],

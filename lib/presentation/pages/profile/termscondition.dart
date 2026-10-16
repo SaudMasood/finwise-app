@@ -1,7 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/color/app_color.dart';
 import '../notification/notification.dart';
 
 class TermsConditionScreen extends StatefulWidget {
@@ -12,15 +14,23 @@ class TermsConditionScreen extends StatefulWidget {
 }
 
 class _TermsConditionScreenState extends State<TermsConditionScreen> {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-
   static const String _acceptedKey = 'terms_conditions_accepted';
 
   bool accepted = false;
   bool loading = true;
   bool saving = false;
+
+  bool get _isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get _backgroundColor =>
+      _isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  Color get _surfaceColor =>
+      _isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  Color get _textColor =>
+      _isDark ? AppColors.darkText : AppColors.darkGreen;
 
   @override
   void initState() {
@@ -57,27 +67,35 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
       );
 
       Navigator.pop(context, true);
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Unable to save your acceptance. Please try again.'),
+          content: Text(
+            'Unable to save your acceptance. Please try again.',
+          ),
         ),
       );
     } finally {
-      if (mounted) setState(() => saving = false);
+      if (mounted) {
+        setState(() => saving = false);
+      }
     }
   }
 
   TextStyle get _bodyStyle => GoogleFonts.poppins(
     fontSize: 10.5,
     height: 1.6,
-    color: darkGreen,
+    color: _textColor,
   );
 
   Widget _paragraph(String text) {
-    return Text(text, textAlign: TextAlign.justify, style: _bodyStyle);
+    return Text(
+      text,
+      textAlign: TextAlign.justify,
+      style: _bodyStyle,
+    );
   }
 
   Widget _item(String number, String title, String text) {
@@ -86,14 +104,19 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 22, child: Text(number, style: _bodyStyle)),
+          SizedBox(
+            width: 22,
+            child: Text(number, style: _bodyStyle),
+          ),
           Expanded(
             child: Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
                     text: '$title. ',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   TextSpan(text: text),
                 ],
@@ -118,7 +141,10 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: _isDark ? AppColors.darkText : AppColors.white,
+                ),
               ),
               Expanded(
                 child: Center(
@@ -127,7 +153,7 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: darkGreen,
+                      color: _textColor,
                     ),
                   ),
                 ),
@@ -135,8 +161,8 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
+                decoration: BoxDecoration(
+                  color: _isDark ? AppColors.darkCard : AppColors.lightGreen,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -149,9 +175,9 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.notifications_none,
-                    color: darkGreen,
+                    color: _textColor,
                     size: 20,
                   ),
                 ),
@@ -166,7 +192,7 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: _backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -174,15 +200,19 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: _surfaceColor,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(45),
                   ),
                 ),
                 child: loading
-                    ? const Center(
-                  child: CircularProgressIndicator(color: mainGreen),
+                    ? Center(
+                  child: CircularProgressIndicator(
+                    color: _isDark
+                        ? AppColors.lightGreen
+                        : AppColors.primaryGreen,
+                  ),
                 )
                     : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(28, 30, 28, 24),
@@ -194,7 +224,7 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: darkGreen,
+                          color: _textColor,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -244,7 +274,7 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                       Text(
                         'www.finwiseapp.de',
                         style: _bodyStyle.copyWith(
-                          color: const Color(0xFF2F80ED),
+                          color: AppColors.blue,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -253,22 +283,31 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                         children: [
                           Checkbox(
                             value: accepted,
-                            activeColor: Colors.transparent,
-                            checkColor: darkGreen,
-                            side: const BorderSide(
-                              color: darkGreen,
+                            activeColor: _isDark
+                                ? AppColors.lightGreen
+                                : AppColors.primaryGreen,
+                            checkColor: _isDark
+                                ? AppColors.darkBackground
+                                : AppColors.darkGreen,
+                            side: BorderSide(
+                              color: _textColor,
                               width: 1.5,
                             ),
                             visualDensity: VisualDensity.compact,
                             materialTapTargetSize:
                             MaterialTapTargetSize.shrinkWrap,
-                            onChanged: (v) =>
-                                setState(() => accepted = v ?? false),
+                            onChanged: (value) {
+                              setState(() {
+                                accepted = value ?? false;
+                              });
+                            },
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            'I accept all the terms and conditions',
-                            style: _bodyStyle,
+                          Expanded(
+                            child: Text(
+                              'I accept all the terms and conditions',
+                              style: _bodyStyle,
+                            ),
                           ),
                         ],
                       ),
@@ -278,25 +317,35 @@ class _TermsConditionScreenState extends State<TermsConditionScreen> {
                           width: 150,
                           height: 38,
                           child: ElevatedButton(
-                            onPressed:
-                            accepted && !saving ? _acceptTerms : null,
+                            onPressed: accepted && !saving
+                                ? _acceptTerms
+                                : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: mainGreen,
-                              disabledBackgroundColor:
-                              Colors.grey.shade300,
-                              foregroundColor: darkGreen,
+                              backgroundColor: _isDark
+                                  ? AppColors.lightGreen
+                                  : AppColors.primaryGreen,
+                              disabledBackgroundColor: _isDark
+                                  ? AppColors.darkCard
+                                  : Colors.grey.shade300,
+                              foregroundColor: _isDark
+                                  ? AppColors.darkBackground
+                                  : AppColors.darkGreen,
+                              disabledForegroundColor:
+                              AppColors.darkSecondaryText,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
                             child: saving
-                                ? const SizedBox(
+                                ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: darkGreen,
+                                color: _isDark
+                                    ? AppColors.darkBackground
+                                    : AppColors.darkGreen,
                               ),
                             )
                                 : Text(

@@ -1,8 +1,10 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../bloc/profile/fingerprint/fingerprint_bloc.dart';
 import '../../bloc/profile/fingerprint/fingerprint_event.dart';
 import '../../bloc/profile/fingerprint/fingerprint_state.dart';
@@ -13,17 +15,13 @@ import 'fingerprintolddelete.dart';
 class FingerprintScreen extends StatelessWidget {
   const FingerprintScreen({super.key});
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-  static const Color tileLight = Color(0xFF6DB6FF);
-  static const Color tileMid = Color(0xFF3299FF);
-
   String _fingerprintLabel() {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName?.trim();
 
-    if (name != null && name.isNotEmpty) return '$name Fingerprint';
+    if (name != null && name.isNotEmpty) {
+      return '$name Fingerprint';
+    }
 
     final emailName = user?.email?.split('@').first.trim();
 
@@ -32,7 +30,10 @@ class FingerprintScreen extends StatelessWidget {
           .replaceAll(RegExp(r'[._-]+'), ' ')
           .split(' ')
           .where((part) => part.isNotEmpty)
-          .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+          .map(
+            (part) =>
+        '${part[0].toUpperCase()}${part.substring(1)}',
+      )
           .join(' ');
 
       return '$formatted Fingerprint';
@@ -43,27 +44,53 @@ class FingerprintScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final background = isDark
+        ? AppColors.darkBackground
+        : AppColors.primaryGreen;
+    final surface =
+    isDark ? AppColors.darkSurface : AppColors.lightGreen;
+    final textColor =
+    isDark ? AppColors.darkText : AppColors.darkGreen;
+
+    final iconTileColor =
+    isDark ? AppColors.darkCard : AppColors.blueLight;
+    final addTileColor =
+    isDark ? AppColors.darkSearchField : AppColors.blue;
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Column(
           children: [
-            _header(context),
+            _header(context, isDark, textColor),
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(28, 34, 28, 25),
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
+                padding: const EdgeInsets.fromLTRB(
+                  28,
+                  34,
+                  28,
+                  25,
+                ),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(45),
                   ),
                 ),
-                child: BlocConsumer<FingerprintBloc, FingerprintState>(
+                child: BlocConsumer<FingerprintBloc,
+                    FingerprintState>(
                   listener: (context, state) {
                     if (state is FingerprintFailure) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.message)),
+                        SnackBar(
+                          content: Text(state.message),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: AppColors.error,
+                        ),
                       );
                     }
                   },
@@ -71,7 +98,9 @@ class FingerprintScreen extends StatelessWidget {
                     if (state is FingerprintInitial ||
                         state is FingerprintLoading) {
                       return const Center(
-                        child: CircularProgressIndicator(color: mainGreen),
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryGreen,
+                        ),
                       );
                     }
 
@@ -85,7 +114,7 @@ class FingerprintScreen extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: darkGreen,
+                                color: textColor,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -95,6 +124,12 @@ class FingerprintScreen extends StatelessWidget {
                                     .read<FingerprintBloc>()
                                     .add(LoadFingerprint());
                               },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                AppColors.primaryGreen,
+                                foregroundColor:
+                                AppColors.darkGreen,
+                              ),
                               child: const Text('Try Again'),
                             ),
                           ],
@@ -110,17 +145,22 @@ class FingerprintScreen extends StatelessWidget {
                       children: [
                         if (state.enabled) ...[
                           _tile(
+                            context: context,
                             icon: Icons.fingerprint,
-                            color: tileLight,
+                            color: iconTileColor,
                             title: _fingerprintLabel(),
+                            textColor: textColor,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: context.read<FingerprintBloc>(),
-                                    child: const FingerprintOldDeleteScreen(),
-                                  ),
+                                  builder: (_) =>
+                                      BlocProvider.value(
+                                        value: context
+                                            .read<FingerprintBloc>(),
+                                        child:
+                                        const FingerprintOldDeleteScreen(),
+                                      ),
                                 ),
                               ).then((_) {
                                 if (context.mounted) {
@@ -134,16 +174,20 @@ class FingerprintScreen extends StatelessWidget {
                           const SizedBox(height: 20),
                         ],
                         _tile(
+                          context: context,
                           icon: Icons.add,
-                          color: tileMid,
+                          color: addTileColor,
                           title: 'Add A Fingerprint',
+                          textColor: textColor,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
-                                  value: context.read<FingerprintBloc>(),
-                                  child: const AddFingerprintScreen(),
+                                  value: context
+                                      .read<FingerprintBloc>(),
+                                  child:
+                                  const AddFingerprintScreen(),
                                 ),
                               ),
                             ).then((_) {
@@ -167,97 +211,131 @@ class FingerprintScreen extends StatelessWidget {
     );
   }
 
-  Widget _header(BuildContext context) {
+  Widget _header(
+      BuildContext context,
+      bool isDark,
+      Color textColor,
+      ) {
     return SizedBox(
       height: 100,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.maybePop(context),
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDark
+                    ? AppColors.darkText
+                    : AppColors.white,
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Fingerprint',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: darkGreen,
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Fingerprint',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? AppColors.darkText
+                        : AppColors.white,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkCard
+                    : AppColors.lightGreen,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const NotificationScreen(),
                     ),
-                  ),
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications_none,
+                  color: textColor,
+                  size: 20,
                 ),
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    color: darkGreen,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 18),
+          ],
         ),
       ),
     );
   }
 
   Widget _tile({
+    required BuildContext context,
     required IconData icon,
     required Color color,
     required String title,
+    required Color textColor,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: SizedBox(
-        height: 46,
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: Colors.white, size: 30),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                  color: darkGreen,
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: 58,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDark
+                      ? AppColors.lightGreen
+                      : AppColors.white,
+                  size: 30,
                 ),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: darkGreen, size: 24),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: isDark
+                    ? AppColors.darkSecondaryText
+                    : textColor,
+                size: 24,
+              ),
+            ],
+          ),
         ),
       ),
     );

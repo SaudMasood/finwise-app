@@ -2,19 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Password dependencies
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/deleteaccount.dart';
+import '../../../data/datasources/local_notification.dart';
 import '../../../data/datasources/password_datasorce.dart';
 import '../../../data/repositories/deleteacc/deleteacc_repo_imp.dart';
+import '../../../data/repositories/local_noti/local_noti_repo.dart';
 import '../../../data/repositories/paswword_repo_imp/pasword_repo_imp.dart';
 import '../../../domain/repositories/deleteaccount/deleteaccount_repo.dart';
+import '../../../domain/repositories/local_notific/local.dart';
 import '../../../domain/repositories/password/password.dart';
 import '../../../domain/usecases/deleteacc/deleteacc.dart';
 import '../../../domain/usecases/paswrd/password.dart';
 import '../../bloc/deleteacc/deleteaccount_bloc.dart';
+import '../../bloc/local_noti/local_bloc.dart';
+import '../../bloc/local_noti/local_event.dart';
 import '../../bloc/password/password_bloc.dart';
-
-
 import '../notification/notification.dart';
 import 'notifsetting.dart';
 import 'passwordsetnew.dart';
@@ -23,10 +26,8 @@ import 'deleteacc.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
 
   void _openPasswordSettings(BuildContext context) {
     final dataSource = PasswordRemoteDataSource();
@@ -52,7 +53,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Open notifications
   void _openNotifications(BuildContext context) {
     Navigator.push(
       context,
@@ -62,12 +62,24 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Open notification settings
   void _openNotificationSettings(BuildContext context) {
+    final notificationService = LocalNotificationService();
+
+    final NotificationSettingsRepository repository =
+    NotificationSettingsRepositoryImpl(
+      dataSource: notificationService,
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const NotificationSettingsScreen(),
+        builder: (_) => BlocProvider<NotificationSettingsBloc>(
+          create: (_) => NotificationSettingsBloc(
+            repository: repository,
+            notificationService: notificationService,
+          )..add(const LoadNotificationSettings()),
+          child: const NotificationSettingsScreen(),
+        ),
       ),
     );
   }
@@ -97,68 +109,100 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Figma tile: small filled teal circle with dark icon, title, dark chevron.
   Widget _buildSettingsTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final Color iconColor = isDestructive ? Colors.red : mainGreen;
-    final Color textColor = isDestructive ? Colors.red : darkGreen;
+    final isDark = _isDark(context);
 
-    return ListTile(
+    final circleColor =
+    isDestructive ? AppColors.error : AppColors.primaryGreen;
+
+    final iconColor = isDark ? AppColors.darkBackground : AppColors.darkGreen;
+
+    final textColor = isDestructive
+        ? AppColors.error
+        : (isDark ? AppColors.darkText : AppColors.darkGreen);
+
+    final chevronColor = isDestructive
+        ? AppColors.error
+        : (isDark ? AppColors.darkText : AppColors.darkGreen);
+
+    return InkWell(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 7,
-      ),
-      leading: Container(
-        width: 45,
-        height: 45,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: circleColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 15,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: chevronColor,
+              size: 22,
+            ),
+          ],
         ),
-        child: Icon(
-          icon,
-          color: iconColor,
-          size: 23,
-        ),
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: textColor,
-        size: 25,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDark(context);
+
+    final background =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final surface =
+    isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+    final headerTextColor =
+    isDark ? AppColors.darkText : AppColors.darkGreen;
+
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             SizedBox(
-              height: 110,
+              height: 88,
               child: Row(
                 children: [
                   const SizedBox(width: 12),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: isDark
+                          ? AppColors.darkText
+                          : AppColors.white,
                       size: 23,
                     ),
                   ),
@@ -167,9 +211,9 @@ class SettingsScreen extends StatelessWidget {
                       child: Text(
                         'Settings',
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: darkGreen,
+                          color: headerTextColor,
                         ),
                       ),
                     ),
@@ -179,17 +223,21 @@ class SettingsScreen extends StatelessWidget {
                     child: Container(
                       width: 38,
                       height: 38,
-                      decoration: const BoxDecoration(
-                        color: lightGreen,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkCard
+                            : AppColors.lightGreen,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         tooltip: 'Notifications',
                         onPressed: () => _openNotifications(context),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.notifications_none,
-                          color: darkGreen,
+                          color: isDark
+                              ? AppColors.darkText
+                              : AppColors.darkGreen,
                           size: 22,
                         ),
                       ),
@@ -198,155 +246,44 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Main content
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(45),
                     topRight: Radius.circular(45),
                   ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
-                    25,
-                    35,
-                    25,
+                    26,
+                    42,
+                    26,
                     30,
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Account Settings',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: darkGreen,
-                        ),
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.notifications_none_rounded,
+                        title: 'Notification Settings',
+                        onTap: () => _openNotificationSettings(context),
                       ),
-                      const SizedBox(height: 7),
-                      Text(
-                        'Manage your account and preferences.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: darkGreen.withValues(alpha: 0.65),
-                        ),
+                      const SizedBox(height: 6),
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.vpn_key_outlined,
+                        title: 'Password Settings',
+                        onTap: () => _openPasswordSettings(context),
                       ),
-                      const SizedBox(height: 25),
-
-                      // Settings options
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: darkGreen.withValues(alpha: 0.04),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            _buildSettingsTile(
-                              icon: Icons.notifications_none_rounded,
-                              title: 'Notification Settings',
-                              onTap: () =>
-                                  _openNotificationSettings(context),
-                            ),
-                            const Divider(
-                              height: 1,
-                              indent: 76,
-                              endIndent: 20,
-                              color: Color(0xFFE8F2EB),
-                            ),
-                            _buildSettingsTile(
-                              icon: Icons.lock_outline_rounded,
-                              title: 'Password Settings',
-                              onTap: () =>
-                                  _openPasswordSettings(context),
-                            ),
-                            const Divider(
-                              height: 1,
-                              indent: 76,
-                              endIndent: 20,
-                              color: Color(0xFFE8F2EB),
-                            ),
-                            _buildSettingsTile(
-                              icon: Icons.person_outline_rounded,
-                              title: 'Delete Account',
-                              isDestructive: true,
-                              onTap: () =>
-                                  _openDeleteAccount(context),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      // Security information
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(17),
-                        decoration: BoxDecoration(
-                          color: softGreen,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 43,
-                              height: 43,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(
-                                  alpha: 0.7,
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.shield_outlined,
-                                color: darkGreen,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 13),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Your Security Matters',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: darkGreen,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Use a strong password and keep your '
-                                        'account information secure.',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      height: 1.7,
-                                      color: darkGreen.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 6),
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.person_outline_rounded,
+                        title: 'Delete Account',
+                        onTap: () => _openDeleteAccount(context),
                       ),
                     ],
                   ),

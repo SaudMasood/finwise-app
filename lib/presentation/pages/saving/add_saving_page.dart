@@ -1,7 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../domain/entities/saving/saving.dart';
 import '../../bloc/saving/saving_bloc.dart';
 import '../../bloc/saving/saving_event.dart';
@@ -20,26 +22,42 @@ class AddSavingsPage extends StatefulWidget {
 }
 
 class _AddSavingsPageState extends State<AddSavingsPage> {
-  static const mainGreen = Color(0xFF00D09E);
-  static const lightGreen = Color(0xFFF1FFF3);
-  static const softGreen = Color(0xFFDFF7E2);
-  static const darkGreen = Color(0xFF052224);
-
   final TextEditingController dateController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController messageController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
-
   String selectedCategory = '';
-
   bool isSaving = false;
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get backgroundColor =>
+      isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  Color get surfaceColor =>
+      isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  Color get fieldColor =>
+      isDark ? AppColors.darkSearchField : AppColors.softGreen;
+
+  Color get textColor =>
+      isDark ? AppColors.darkText : AppColors.darkGreen;
+
+  Color get secondaryTextColor =>
+      isDark ? AppColors.darkSecondaryText : AppColors.primaryGreen;
+
+  Color get buttonColor =>
+      isDark ? AppColors.lightGreen : AppColors.primaryGreen;
+
+  Color get buttonTextColor =>
+      isDark ? AppColors.darkBackground : AppColors.darkGreen;
 
   @override
   void initState() {
     super.initState();
-
     selectedCategory = widget.categoryName;
     dateController.text = _formatFullDate(selectedDate);
   }
@@ -50,7 +68,6 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     amountController.dispose();
     titleController.dispose();
     messageController.dispose();
-
     super.dispose();
   }
 
@@ -60,14 +77,12 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     final double scale = (size.width / 375).clamp(0.85, 1.15);
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             SizedBox(height: 14 * scale),
-
-            // ================= APP BAR =================
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 25 * scale),
               child: Row(
@@ -76,7 +91,9 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                     onTap: () => Navigator.pop(context),
                     child: Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: isDark
+                          ? AppColors.darkText
+                          : AppColors.white,
                       size: 26 * scale,
                     ),
                   ),
@@ -87,7 +104,9 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 18 * scale,
                           fontWeight: FontWeight.w600,
-                          color: darkGreen,
+                          color: isDark
+                              ? AppColors.darkText
+                              : AppColors.darkGreen,
                         ),
                       ),
                     ),
@@ -95,38 +114,36 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                   Container(
                     width: 32 * scale,
                     height: 32 * scale,
-                    decoration: const BoxDecoration(
-                      color: lightGreen,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkCard
+                          : AppColors.lightGreen,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.notifications_none,
-                      color: darkGreen,
+                      color: textColor,
                       size: 20 * scale,
                     ),
                   ),
                 ],
               ),
             ),
-
             SizedBox(height: 26 * scale),
-
-            // ================= BODY =================
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: lightGreen,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(50 * scale),
                     topRight: Radius.circular(50 * scale),
                   ),
                 ),
                 child: BlocListener<SavingsBloc, SavingsState>(
-                  listenWhen: (previous, current) {
-                    return previous.savingSuccess != current.savingSuccess ||
-                        previous.errorMessage != current.errorMessage;
-                  },
+                  listenWhen: (previous, current) =>
+                  previous.savingSuccess != current.savingSuccess ||
+                      previous.errorMessage != current.errorMessage,
                   listener: (context, state) {
                     if (state.savingSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,12 +151,14 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           content: Text('Savings added successfully'),
                         ),
                       );
-
                       Navigator.pop(context);
                       return;
                     }
 
-                    if (state.errorMessage != null && !state.savingSuccess) {
+                    if (state.errorMessage != null &&
+                        !state.savingSuccess) {
+                      setState(() => isSaving = false);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(state.errorMessage!)),
                       );
@@ -165,43 +184,36 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           showCalendar: true,
                           onTap: _selectDate,
                         ),
-
                         SizedBox(height: 24 * scale),
-
                         _buildLabel('Category', scale),
                         SizedBox(height: 6 * scale),
                         _buildCategoryField(scale),
-
                         SizedBox(height: 24 * scale),
-
                         _buildLabel('Amount', scale),
                         SizedBox(height: 6 * scale),
                         _buildTextField(
                           controller: amountController,
                           scale: scale,
-                          keyboardType: const TextInputType.numberWithOptions(
+                          keyboardType:
+                          const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
                         ),
-
                         SizedBox(height: 24 * scale),
-
                         _buildLabel('Expense Title', scale),
                         SizedBox(height: 6 * scale),
                         _buildTextField(
                           controller: titleController,
                           scale: scale,
                         ),
-
                         SizedBox(height: 24 * scale),
-
-                        // Message box (label inside, like Figma)
                         Container(
                           width: double.infinity,
                           height: 150 * scale,
                           decoration: BoxDecoration(
-                            color: softGreen,
-                            borderRadius: BorderRadius.circular(20 * scale),
+                            color: fieldColor,
+                            borderRadius:
+                            BorderRadius.circular(20 * scale),
                           ),
                           child: TextField(
                             controller: messageController,
@@ -210,23 +222,21 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                             textAlignVertical: TextAlignVertical.top,
                             style: GoogleFonts.poppins(
                               fontSize: 12 * scale,
-                              color: darkGreen,
+                              color: textColor,
                             ),
                             decoration: InputDecoration(
                               hintText: 'Enter Message',
                               hintStyle: GoogleFonts.poppins(
                                 fontSize: 12 * scale,
-                                color: mainGreen,
+                                color: secondaryTextColor,
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.all(14 * scale),
+                              contentPadding:
+                              EdgeInsets.all(14 * scale),
                             ),
                           ),
                         ),
-
                         SizedBox(height: 28 * scale),
-
-                        // Save button
                         Center(
                           child: SizedBox(
                             width: 125 * scale,
@@ -234,23 +244,26 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                             child: ElevatedButton(
                               onPressed: isSaving ? null : _saveSaving,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: mainGreen,
-                                foregroundColor: darkGreen,
+                                backgroundColor: buttonColor,
+                                foregroundColor: buttonTextColor,
                                 disabledBackgroundColor:
-                                mainGreen.withOpacity(0.5),
+                                buttonColor.withOpacity(0.5),
+                                disabledForegroundColor:
+                                buttonTextColor.withOpacity(0.7),
                                 elevation: 0,
                                 padding: EdgeInsets.zero,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius:
+                                  BorderRadius.circular(20),
                                 ),
                               ),
                               child: isSaving
                                   ? SizedBox(
                                 width: 16 * scale,
                                 height: 16 * scale,
-                                child: const CircularProgressIndicator(
+                                child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: darkGreen,
+                                  color: buttonTextColor,
                                 ),
                               )
                                   : Text(
@@ -263,7 +276,6 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                             ),
                           ),
                         ),
-
                         SizedBox(height: 20 * scale),
                       ],
                     ),
@@ -277,36 +289,33 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     );
   }
 
-  // ================= LABEL =================
   Widget _buildLabel(String text, double scale) {
     return Text(
       text,
       style: GoogleFonts.poppins(
         fontSize: 12 * scale,
         fontWeight: FontWeight.w500,
-        color: darkGreen,
+        color: textColor,
       ),
     );
   }
 
-  // ================= CALENDAR ICON (small green box) =================
   Widget _calendarIcon(double scale) {
     return Container(
       width: 24 * scale,
       height: 24 * scale,
       decoration: BoxDecoration(
-        color: mainGreen,
+        color: buttonColor,
         borderRadius: BorderRadius.circular(8 * scale),
       ),
       child: Icon(
         Icons.calendar_month_outlined,
         size: 15 * scale,
-        color: darkGreen,
+        color: buttonTextColor,
       ),
     );
   }
 
-  // ================= TEXT FIELD =================
   Widget _buildTextField({
     required TextEditingController controller,
     required double scale,
@@ -319,7 +328,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       width: double.infinity,
       height: 38 * scale,
       decoration: BoxDecoration(
-        color: softGreen,
+        color: fieldColor,
         borderRadius: BorderRadius.circular(20 * scale),
       ),
       child: TextField(
@@ -331,14 +340,13 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
         style: GoogleFonts.poppins(
           fontSize: 12 * scale,
           fontWeight: FontWeight.w500,
-          color: darkGreen,
+          color: textColor,
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 16 * scale,
-            vertical: 0,
           ),
           suffixIcon: showCalendar
               ? Padding(
@@ -355,21 +363,21 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     );
   }
 
-  // ================= CATEGORY FIELD =================
   Widget _buildCategoryField(double scale) {
     return GestureDetector(
       onTap: () {
-        final categories = context.read<SavingsBloc>().state.savingCategories;
+        final categories =
+            context.read<SavingsBloc>().state.savingCategories;
 
-        if (categories.isEmpty) {
-          return;
-        }
+        if (categories.isEmpty) return;
 
         showModalBottomSheet(
           context: context,
-          backgroundColor: lightGreen,
+          backgroundColor: surfaceColor,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(25),
+            ),
           ),
           builder: (bottomSheetContext) {
             return SafeArea(
@@ -382,17 +390,16 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                       category,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: darkGreen,
+                        color: textColor,
                       ),
                     ),
                     trailing: category == selectedCategory
-                        ? const Icon(Icons.check, color: mainGreen)
+                        ? Icon(Icons.check, color: buttonColor)
                         : null,
                     onTap: () {
                       setState(() {
                         selectedCategory = category;
                       });
-
                       Navigator.pop(bottomSheetContext);
                     },
                   );
@@ -407,7 +414,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
         height: 38 * scale,
         padding: EdgeInsets.symmetric(horizontal: 16 * scale),
         decoration: BoxDecoration(
-          color: softGreen,
+          color: fieldColor,
           borderRadius: BorderRadius.circular(20 * scale),
         ),
         child: Row(
@@ -418,14 +425,14 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 12 * scale,
                   fontWeight: FontWeight.w500,
-                  color: darkGreen,
+                  color: textColor,
                 ),
               ),
             ),
             Icon(
               Icons.keyboard_arrow_down,
               size: 20 * scale,
-              color: mainGreen,
+              color: secondaryTextColor,
             ),
           ],
         ),
@@ -433,20 +440,26 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     );
   }
 
-  // ================= DATE PICKER =================
   Future<void> _selectDate() async {
-    final DateTime? result = await showDatePicker(
+    final result = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder: (context, child) {
+        final dark = Theme.of(context).brightness == Brightness.dark;
+
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: mainGreen,
-              onPrimary: Colors.white,
-              onSurface: darkGreen,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primaryGreen,
+              brightness: dark ? Brightness.dark : Brightness.light,
+              surface: dark
+                  ? AppColors.darkSurface
+                  : AppColors.lightGreen,
+              onSurface: dark
+                  ? AppColors.darkText
+                  : AppColors.darkGreen,
             ),
           ),
           child: child!,
@@ -454,9 +467,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       },
     );
 
-    if (result == null) {
-      return;
-    }
+    if (result == null) return;
 
     setState(() {
       selectedDate = result;
@@ -464,7 +475,6 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
     });
   }
 
-  // ================= SAVE =================
   void _saveSaving() {
     final amountText = amountController.text.trim();
     final title = titleController.text.trim();
@@ -475,7 +485,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       return;
     }
 
-    final double? amount = double.tryParse(amountText);
+    final amount = double.tryParse(amountText);
 
     if (amount == null || amount <= 0) {
       _showMessage('Enter a valid amount');
@@ -502,9 +512,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       createdAt: DateTime.now(),
     );
 
-    setState(() {
-      isSaving = true;
-    });
+    setState(() => isSaving = true);
 
     context.read<SavingsBloc>().add(
       AddSaving(saving: saving),

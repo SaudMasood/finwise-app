@@ -1,9 +1,11 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/homedatasource.dart';
 import '../../../data/datasources/local_notification.dart';
 import '../../../data/repositories/home/home_repository_impl.dart';
@@ -46,12 +48,21 @@ class HomeScreen extends StatelessWidget {
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
 
-  static const mainGreen = Color(0xFF00D09E);
-  static const lightGreen = Color(0xFFF1FFF3);
-  static const softGreen = Color(0xFFDDF5E2);
-  static const darkGreen = Color(0xFF063F3F);
+  static const mainGreen = AppColors.primaryGreen;
+  static const lightGreen = AppColors.lightGreen;
+  static const softGreen = AppColors.softGreen;
+  static const darkGreen = AppColors.darkGreen;
   static const blue = Color(0xFF168BFF);
   static const incomeBlue = Color(0xFF5AAFFF);
+
+  // Figma-inspired dark colors.
+  static const darkBackground = Color(0xFF062E2C);
+  static const darkSurface = Color(0xFF0B3835);
+  static const darkCard = Color(0xFF103F3B);
+  static const darkText = Color(0xFFF5FAFA);
+  static const darkSecondaryText = Color(0xFFB7D0CC);
+  static const darkDivider = Color(0xFF24534E);
+  static const darkProgressTrack = Color(0xFFDAF8E9);
 
   @override
   Widget build(BuildContext context) {
@@ -62,15 +73,29 @@ class HomeView extends StatelessWidget {
       1.20,
     );
 
+    final isDark = AppColors.isDark(context);
+
+    final backgroundColor =
+    isDark ? darkBackground : lightGreen;
+
+    final textColor =
+    isDark ? darkText : darkGreen;
+
+    final secondaryTextColor =
+    isDark ? darkSecondaryText : darkGreen;
+
+    final dividerColor =
+    isDark ? darkDivider : softGreen;
+
     return Scaffold(
       backgroundColor: mainGreen,
       body: SafeArea(
         child: BlocBuilder<HomeBloc, HomeState>(
           builder: (context, state) {
             if (state is HomeLoading) {
-              return const Center(
+              return Center(
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: isDark ? darkText : Colors.white,
                 ),
               );
             }
@@ -88,7 +113,7 @@ class HomeView extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.white,
+                          color: isDark ? darkText : Colors.white,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -100,9 +125,7 @@ class HomeView extends StatelessWidget {
                             const LoadHome(),
                           );
                         },
-                        child: const Text(
-                          'Retry',
-                        ),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -154,11 +177,9 @@ class HomeView extends StatelessWidget {
                             children: [
                               Text(
                                 'Hi, Welcome Back',
-                                style:
-                                GoogleFonts.poppins(
+                                style: GoogleFonts.poppins(
                                   fontSize: 19 * scale,
-                                  fontWeight:
-                                  FontWeight.w600,
+                                  fontWeight: FontWeight.w600,
                                   color: darkGreen,
                                   height: 1.05,
                                 ),
@@ -168,16 +189,14 @@ class HomeView extends StatelessWidget {
                               ),
                               Text(
                                 'Good Morning',
-                                style:
-                                GoogleFonts.poppins(
-                                  fontSize:
-                                  10.5 * scale,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10.5 * scale,
                                   color: darkGreen,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(width: 6,),
+                          SizedBox(width: 6),
                           Container(
                             width: 36 * scale,
                             height: 36 * scale,
@@ -188,12 +207,14 @@ class HomeView extends StatelessWidget {
                             alignment: Alignment.center,
                             child: IconButton(
                               padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                              constraints:
+                              const BoxConstraints(),
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const NotificationScreen(),
+                                    builder: (context) =>
+                                    const NotificationScreen(),
                                   ),
                                 );
                               },
@@ -230,12 +251,9 @@ class HomeView extends StatelessWidget {
                                     ),
                                     Text(
                                       'Total Balance',
-                                      style:
-                                      GoogleFonts.poppins(
-                                        fontSize:
-                                        9.5 * scale,
-                                        color:
-                                        darkGreen,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 9.5 * scale,
+                                        color: darkGreen,
                                       ),
                                     ),
                                   ],
@@ -245,12 +263,9 @@ class HomeView extends StatelessWidget {
                                 ),
                                 Text(
                                   '\$${home.totalBalance.toStringAsFixed(2)}',
-                                  style:
-                                  GoogleFonts.poppins(
-                                    fontSize:
-                                    21.5 * scale,
-                                    fontWeight:
-                                    FontWeight.w600,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 21.5 * scale,
+                                    fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -276,8 +291,7 @@ class HomeView extends StatelessWidget {
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons
-                                          .receipt_long_outlined,
+                                      Icons.receipt_long_outlined,
                                       size: 13 * scale,
                                       color: darkGreen,
                                     ),
@@ -286,12 +300,9 @@ class HomeView extends StatelessWidget {
                                     ),
                                     Text(
                                       'Total Expense',
-                                      style:
-                                      GoogleFonts.poppins(
-                                        fontSize:
-                                        9.5 * scale,
-                                        color:
-                                        darkGreen,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 9.5 * scale,
+                                        color: darkGreen,
                                       ),
                                     ),
                                   ],
@@ -301,12 +312,9 @@ class HomeView extends StatelessWidget {
                                 ),
                                 Text(
                                   '-\$${home.totalExpense.toStringAsFixed(2)}',
-                                  style:
-                                  GoogleFonts.poppins(
-                                    fontSize:
-                                    21.5 * scale,
-                                    fontWeight:
-                                    FontWeight.w600,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 21.5 * scale,
+                                    fontWeight: FontWeight.w600,
                                     color: blue,
                                   ),
                                 ),
@@ -321,6 +329,7 @@ class HomeView extends StatelessWidget {
                       ),
 
                       _progressBar(
+                        context: context,
                         percentage: percentage,
                         totalIncome: totalIncome,
                         scale: scale,
@@ -343,10 +352,8 @@ class HomeView extends StatelessWidget {
                           Expanded(
                             child: Text(
                               '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
-                              style:
-                              GoogleFonts.poppins(
-                                fontSize:
-                                9.5 * scale,
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5 * scale,
                                 color: darkGreen,
                               ),
                             ),
@@ -360,15 +367,11 @@ class HomeView extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration:
-                    const BoxDecoration(
-                      color: lightGreen,
-                      borderRadius:
-                      BorderRadius.only(
-                        topLeft:
-                        Radius.circular(50),
-                        topRight:
-                        Radius.circular(50),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(50),
+                        topRight: Radius.circular(50),
                       ),
                     ),
                     child: SingleChildScrollView(
@@ -383,6 +386,7 @@ class HomeView extends StatelessWidget {
                       child: Column(
                         children: [
                           _savingsCard(
+                            context,
                             home,
                             scale,
                           ),
@@ -403,31 +407,27 @@ class HomeView extends StatelessWidget {
 
                           if (home.activities.isEmpty)
                             Padding(
-                              padding:
-                              EdgeInsets.only(
+                              padding: EdgeInsets.only(
                                 top: 28 * scale,
                               ),
                               child: Text(
                                 'No transactions found',
-                                style:
-                                GoogleFonts.poppins(
-                                  fontSize:
-                                  12 * scale,
-                                  color: darkGreen,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12 * scale,
+                                  color: textColor,
                                 ),
                               ),
                             )
                           else
                             ...home.activities
                                 .take(5)
-                                .map(
-                                  (transaction) {
-                                return _transaction(
-                                  transaction,
-                                  scale,
-                                );
-                              },
-                            ),
+                                .map((transaction) {
+                              return _transaction(
+                                context,
+                                transaction,
+                                scale,
+                              );
+                            }),
                         ],
                       ),
                     ),
@@ -442,27 +442,31 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _progressBar({
+    required BuildContext context,
     required double percentage,
     required double totalIncome,
     required double scale,
   }) {
+    final isDark = AppColors.isDark(context);
+
+    final trackColor =
+    isDark ? darkProgressTrack : softGreen;
+
+    final fillColor =
+    isDark ? darkGreen : darkGreen;
+
     return LayoutBuilder(
       builder: (
           context,
           constraints,
           ) {
-        final totalWidth =
-            constraints.maxWidth;
-
+        final totalWidth = constraints.maxWidth;
         final height = 24 * scale;
 
         double fillWidth =
-            totalWidth *
-                percentage /
-                100;
+            totalWidth * percentage / 100;
 
-        final minimumFill =
-            48 * scale;
+        final minimumFill = 48 * scale;
 
         if (fillWidth > 0 &&
             fillWidth < minimumFill) {
@@ -474,63 +478,48 @@ class HomeView extends StatelessWidget {
         }
 
         final amountOnDark =
-            fillWidth >
-                totalWidth -
-                    (105 * scale);
+            fillWidth > totalWidth - (105 * scale);
 
         return Container(
           width: double.infinity,
           height: height,
-          decoration:
-          BoxDecoration(
-            color: softGreen,
-            borderRadius:
-            BorderRadius.circular(
+          decoration: BoxDecoration(
+            color: trackColor,
+            borderRadius: BorderRadius.circular(
               20 * scale,
             ),
           ),
           child: ClipRRect(
-            borderRadius:
-            BorderRadius.circular(
+            borderRadius: BorderRadius.circular(
               20 * scale,
             ),
             child: Stack(
               children: [
                 AnimatedContainer(
-                  duration:
-                  const Duration(
+                  duration: const Duration(
                     milliseconds: 450,
                   ),
-                  curve:
-                  Curves.easeOut,
+                  curve: Curves.easeOut,
                   width: fillWidth,
                   height: height,
-                  decoration:
-                  BoxDecoration(
-                    color: darkGreen,
-                    borderRadius:
-                    BorderRadius.circular(
+                  decoration: BoxDecoration(
+                    color: fillColor,
+                    borderRadius: BorderRadius.circular(
                       20 * scale,
                     ),
                   ),
                   child: Align(
-                    alignment:
-                    Alignment.centerLeft,
+                    alignment: Alignment.centerLeft,
                     child: Padding(
-                      padding:
-                      EdgeInsets.only(
+                      padding: EdgeInsets.only(
                         left: 13 * scale,
                       ),
                       child: Text(
                         '${percentage.toStringAsFixed(0)}%',
-                        style:
-                        GoogleFonts.poppins(
-                          fontSize:
-                          8.5 * scale,
-                          fontWeight:
-                          FontWeight.w500,
-                          color:
-                          Colors.white,
+                        style: GoogleFonts.poppins(
+                          fontSize: 8.5 * scale,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -544,12 +533,9 @@ class HomeView extends StatelessWidget {
                   child: Center(
                     child: Text(
                       '\$${totalIncome.toStringAsFixed(2)}',
-                      style:
-                      GoogleFonts.poppins(
-                        fontSize:
-                        8.5 * scale,
-                        fontWeight:
-                        FontWeight.w600,
+                      style: GoogleFonts.poppins(
+                        fontSize: 8.5 * scale,
+                        fontWeight: FontWeight.w600,
                         color: amountOnDark
                             ? Colors.white
                             : darkGreen,
@@ -566,25 +552,33 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _savingsCard(
+      BuildContext context,
       HomeEntity home,
       double scale,
       ) {
+    final isDark = AppColors.isDark(context);
+
+    final cardBackground = isDark
+        ? mainGreen
+        : mainGreen;
+
+    final cardTextColor = darkGreen;
+
     final goal = home.totalIncome > 0
-        ? (home.totalBalance / home.totalIncome).clamp(0.0, 1.0).toDouble()
+        ? (home.totalBalance / home.totalIncome)
+        .clamp(0.0, 1.0)
+        .toDouble()
         : 0.0;
 
     return Container(
       width: double.infinity,
       height: 124 * scale,
-      padding:
-      EdgeInsets.all(
+      padding: EdgeInsets.all(
         13 * scale,
       ),
-      decoration:
-      BoxDecoration(
-        color: mainGreen,
-        borderRadius:
-        BorderRadius.circular(
+      decoration: BoxDecoration(
+        color: cardBackground,
+        borderRadius: BorderRadius.circular(
           23 * scale,
         ),
       ),
@@ -621,10 +615,9 @@ class HomeView extends StatelessWidget {
                         ),
                       ),
                       Icon(
-                        Icons
-                            .directions_car_outlined,
+                        Icons.directions_car_outlined,
                         size: 32 * scale,
-                        color: darkGreen,
+                        color: cardTextColor,
                       ),
                     ],
                   ),
@@ -634,20 +627,16 @@ class HomeView extends StatelessWidget {
                 ),
                 Text(
                   'Savings',
-                  style:
-                  GoogleFonts.poppins(
-                    fontSize:
-                    9 * scale,
-                    color: darkGreen,
+                  style: GoogleFonts.poppins(
+                    fontSize: 9 * scale,
+                    color: cardTextColor,
                   ),
                 ),
                 Text(
                   'On Goals',
-                  style:
-                  GoogleFonts.poppins(
-                    fontSize:
-                    9 * scale,
-                    color: darkGreen,
+                  style: GoogleFonts.poppins(
+                    fontSize: 9 * scale,
+                    color: cardTextColor,
                   ),
                 ),
               ],
@@ -663,8 +652,7 @@ class HomeView extends StatelessWidget {
           Expanded(
             flex: 6,
             child: Padding(
-              padding:
-              EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 14 * scale,
               ),
               child: Column(
@@ -676,7 +664,7 @@ class HomeView extends StatelessWidget {
                       Icon(
                         Icons.layers_outlined,
                         size: 29 * scale,
-                        color: darkGreen,
+                        color: cardTextColor,
                       ),
                       SizedBox(
                         width: 8 * scale,
@@ -688,24 +676,17 @@ class HomeView extends StatelessWidget {
                           children: [
                             Text(
                               'Revenue Last Week',
-                              style:
-                              GoogleFonts.poppins(
-                                fontSize:
-                                8.5 * scale,
-                                color:
-                                darkGreen,
+                              style: GoogleFonts.poppins(
+                                fontSize: 8.5 * scale,
+                                color: cardTextColor,
                               ),
                             ),
                             Text(
                               '\$${home.revenueLastWeek.toStringAsFixed(2)}',
-                              style:
-                              GoogleFonts.poppins(
-                                fontSize:
-                                11.5 * scale,
-                                fontWeight:
-                                FontWeight.w600,
-                                color:
-                                darkGreen,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5 * scale,
+                                fontWeight: FontWeight.w600,
+                                color: cardTextColor,
                               ),
                             ),
                           ],
@@ -724,7 +705,7 @@ class HomeView extends StatelessWidget {
                       Icon(
                         Icons.restaurant_outlined,
                         size: 29 * scale,
-                        color: darkGreen,
+                        color: cardTextColor,
                       ),
                       SizedBox(
                         width: 8 * scale,
@@ -736,24 +717,17 @@ class HomeView extends StatelessWidget {
                           children: [
                             Text(
                               'Food Last Week',
-                              style:
-                              GoogleFonts.poppins(
-                                fontSize:
-                                8.5 * scale,
-                                color:
-                                darkGreen,
+                              style: GoogleFonts.poppins(
+                                fontSize: 8.5 * scale,
+                                color: cardTextColor,
                               ),
                             ),
                             Text(
                               '-\$${home.foodLastWeek.toStringAsFixed(2)}',
-                              style:
-                              GoogleFonts.poppins(
-                                fontSize:
-                                11.5 * scale,
-                                fontWeight:
-                                FontWeight.w600,
-                                color:
-                                blue,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5 * scale,
+                                fontWeight: FontWeight.w600,
+                                color: blue,
                               ),
                             ),
                           ],
@@ -775,14 +749,14 @@ class HomeView extends StatelessWidget {
       HomeSuccess state,
       double scale,
       ) {
+    final isDark = AppColors.isDark(context);
+
     return Container(
       width: double.infinity,
       height: 48 * scale,
-      decoration:
-      BoxDecoration(
-        color: softGreen,
-        borderRadius:
-        BorderRadius.circular(
+      decoration: BoxDecoration(
+        color: isDark ? darkSurface : softGreen,
+        borderRadius: BorderRadius.circular(
           17 * scale,
         ),
       ),
@@ -817,47 +791,39 @@ class HomeView extends StatelessWidget {
       String period,
       double scale,
       ) {
-    final selected =
-        state.selectedPeriod ==
-            period;
+    final isDark = AppColors.isDark(context);
+    final selected = state.selectedPeriod == period;
 
     return Expanded(
       child: GestureDetector(
-        behavior:
-        HitTestBehavior.opaque,
+        behavior: HitTestBehavior.opaque,
         onTap: () {
-          context
-              .read<HomeBloc>()
-              .add(
+          context.read<HomeBloc>().add(
             SelectHomePeriod(
               period: period,
             ),
           );
         },
         child: Container(
-          margin:
-          EdgeInsets.all(
+          margin: EdgeInsets.all(
             4 * scale,
           ),
-          decoration:
-          BoxDecoration(
+          decoration: BoxDecoration(
             color: selected
                 ? mainGreen
                 : Colors.transparent,
-            borderRadius:
-            BorderRadius.circular(
+            borderRadius: BorderRadius.circular(
               15 * scale,
             ),
           ),
           child: Center(
             child: Text(
               period,
-              style:
-              GoogleFonts.poppins(
-                fontSize:
-                10.5 * scale,
-                color:
-                darkGreen,
+              style: GoogleFonts.poppins(
+                fontSize: 10.5 * scale,
+                color: selected
+                    ? darkGreen
+                    : (isDark ? darkText : darkGreen),
                 fontWeight: selected
                     ? FontWeight.w500
                     : FontWeight.w400,
@@ -870,55 +836,52 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _transaction(
+      BuildContext context,
       HomeActivityEntity transaction,
       double scale,
       ) {
+    final isDark = AppColors.isDark(context);
+
+    final textColor =
+    isDark ? darkText : darkGreen;
+
+    final secondaryColor =
+    isDark ? darkSecondaryText : blue;
+
+    final dividerColor =
+    isDark ? darkDivider : mainGreen;
+
     final isIncome =
-        transaction.type
-            .toLowerCase() ==
-            'income';
+        transaction.type.toLowerCase() == 'income';
 
-    final title =
-    transaction.title
-        .toLowerCase();
+    final title = transaction.title.toLowerCase();
+    final category = transaction.category.toLowerCase();
 
-    final category =
-    transaction.category
-        .toLowerCase();
-
-    IconData icon =
-        Icons.layers_outlined;
+    IconData icon = Icons.layers_outlined;
 
     if (title.contains('salary') ||
         category.contains('salary')) {
-      icon =
-          Icons.layers_outlined;
+      icon = Icons.layers_outlined;
     } else if (title.contains('grocery') ||
         title.contains('groceries') ||
         category.contains('grocery') ||
         category.contains('groceries')) {
-      icon =
-          Icons.shopping_bag_outlined;
+      icon = Icons.shopping_bag_outlined;
     } else if (title.contains('rent') ||
         category.contains('rent')) {
-      icon =
-          Icons.volunteer_activism_outlined;
+      icon = Icons.volunteer_activism_outlined;
     } else if (title.contains('transport') ||
         category.contains('transport')) {
-      icon =
-          Icons.directions_bus_outlined;
+      icon = Icons.directions_bus_outlined;
     } else if (title.contains('food') ||
         category.contains('food')) {
-      icon =
-          Icons.restaurant_outlined;
+      icon = Icons.restaurant_outlined;
     } else if (category.contains('drink')) {
-      icon =
-          Icons.local_bar_outlined;
+      icon = Icons.local_bar_outlined;
     }
 
     return Padding(
-      padding:
-      EdgeInsets.only(
+      padding: EdgeInsets.only(
         bottom: 22 * scale,
       ),
       child: Row(
@@ -926,12 +889,9 @@ class HomeView extends StatelessWidget {
           Container(
             width: 46 * scale,
             height: 46 * scale,
-            decoration:
-            BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isIncome
-                  ? incomeBlue
-                  : blue,
+              color: isIncome ? incomeBlue : blue,
             ),
             child: Icon(
               icon,
@@ -952,16 +912,11 @@ class HomeView extends StatelessWidget {
                 Text(
                   transaction.title,
                   maxLines: 1,
-                  overflow:
-                  TextOverflow.ellipsis,
-                  style:
-                  GoogleFonts.poppins(
-                    fontSize:
-                    11.5 * scale,
-                    fontWeight:
-                    FontWeight.w500,
-                    color:
-                    darkGreen,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5 * scale,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
                   ),
                 ),
                 SizedBox(
@@ -970,13 +925,10 @@ class HomeView extends StatelessWidget {
                 Text(
                   '${transaction.date.hour.toString().padLeft(2, '0')}:${transaction.date.minute.toString().padLeft(2, '0')} - ${_month(transaction.date.month)} ${transaction.date.day}',
                   maxLines: 1,
-                  overflow:
-                  TextOverflow.ellipsis,
-                  style:
-                  GoogleFonts.poppins(
-                    fontSize:
-                    8.5 * scale,
-                    color: blue,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 8.5 * scale,
+                    color: secondaryColor,
                   ),
                 ),
               ],
@@ -986,7 +938,7 @@ class HomeView extends StatelessWidget {
           Container(
             width: 1,
             height: 35 * scale,
-            color: mainGreen,
+            color: dividerColor,
           ),
 
           SizedBox(
@@ -998,13 +950,10 @@ class HomeView extends StatelessWidget {
             child: Text(
               transaction.category,
               maxLines: 1,
-              overflow:
-              TextOverflow.ellipsis,
-              style:
-              GoogleFonts.poppins(
-                fontSize:
-                8.5 * scale,
-                color: darkGreen,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 8.5 * scale,
+                color: textColor,
               ),
             ),
           ),
@@ -1012,7 +961,7 @@ class HomeView extends StatelessWidget {
           Container(
             width: 1,
             height: 35 * scale,
-            color: mainGreen,
+            color: dividerColor,
           ),
 
           SizedBox(
@@ -1023,20 +972,13 @@ class HomeView extends StatelessWidget {
             width: 65 * scale,
             child: Text(
               '${isIncome ? '' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
-              textAlign:
-              TextAlign.right,
+              textAlign: TextAlign.right,
               maxLines: 1,
-              overflow:
-              TextOverflow.ellipsis,
-              style:
-              GoogleFonts.poppins(
-                fontSize:
-                9 * scale,
-                fontWeight:
-                FontWeight.w600,
-                color: isIncome
-                    ? darkGreen
-                    : blue,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 9 * scale,
+                fontWeight: FontWeight.w600,
+                color: isIncome ? mainGreen : blue,
               ),
             ),
           ),
@@ -1062,8 +1004,7 @@ class HomeView extends StatelessWidget {
       'December',
     ];
 
-    if (month < 1 ||
-        month > 12) {
+    if (month < 1 || month > 12) {
       return '';
     }
 

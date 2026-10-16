@@ -1,8 +1,10 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../core/wigit/authn_wid.dart';
 import '../../../data/datasources/logindatasource.dart';
 import '../../../data/datasources/signupdatasorce.dart';
@@ -19,21 +21,24 @@ class CreateAccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        final loginDataSource = LoginDataSource(
-          firebaseAuth: FirebaseAuth.instance,
-        );
-        final signupDataSource = SignupDataSource(
-          firebaseAuth: FirebaseAuth.instance,
-        );
+      create: (_) {
+        final auth = FirebaseAuth.instance;
 
-        final authRepository = AuthRepositoryImpl(
+        final loginDataSource =
+        LoginDataSource(firebaseAuth: auth);
+
+        final signupDataSource =
+        SignupDataSource(firebaseAuth: auth);
+
+        final repository = AuthRepositoryImpl(
           loginDataSource: loginDataSource,
           signupDataSource: signupDataSource,
         );
 
         return SignupBloc(
-          signupUseCase: SignupUseCase(repository: authRepository),
+          signupUseCase: SignupUseCase(
+            repository: repository,
+          ),
         );
       },
       child: const CreateAccountView(),
@@ -45,7 +50,8 @@ class CreateAccountView extends StatefulWidget {
   const CreateAccountView({super.key});
 
   @override
-  State<CreateAccountView> createState() => _CreateAccountViewState();
+  State<CreateAccountView> createState() =>
+      _CreateAccountViewState();
 }
 
 class _CreateAccountViewState extends State<CreateAccountView> {
@@ -71,41 +77,63 @@ class _CreateAccountViewState extends State<CreateAccountView> {
   }
 
   void signUp() {
+    final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final confirmPassword =
+    confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password.')),
+        const SnackBar(
+          content: Text(
+            'Please enter your name, email, and password.',
+          ),
+        ),
       );
       return;
     }
 
-    if (passwordController.text != confirmPasswordController.text) {
+    if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
+        const SnackBar(
+          content: Text('Passwords do not match.'),
+        ),
       );
       return;
     }
 
     context.read<SignupBloc>().add(
-      SignupButtonPressed(email: email, password: password),
+      SignupButtonPressed(
+        email: email,
+        password: password,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Listen to sign up result
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final secondaryText = isDark
+        ? AppColors.darkSecondaryText
+        : AppColors.lightSecondaryText;
+
     return BlocListener<SignupBloc, SignupState>(
       listener: (context, state) {
         if (state is SignupSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created successfully.')),
+            const SnackBar(
+              content: Text('Account created successfully.'),
+            ),
           );
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            MaterialPageRoute(
+              builder: (_) => const LoginScreen(),
+            ),
           );
         }
 
@@ -120,37 +148,32 @@ class _CreateAccountViewState extends State<CreateAccountView> {
         child: Column(
           children: [
             const SizedBox(height: 25),
-
             AuthField(
               label: 'Full Name',
-              hint: 'example@example.com',
+              hint: 'Enter your full name',
               controller: fullNameController,
             ),
-
             AuthField(
               label: 'Email',
               hint: 'example@example.com',
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-
             AuthField(
               label: 'Mobile Number',
-              hint: '+ 123 456 789',
+              hint: '+123456789',
               controller: mobileController,
               keyboardType: TextInputType.phone,
             ),
-
             AuthField(
               label: 'Date Of Birth',
-              hint: 'DD / MM /YYY',
+              hint: 'DD / MM / YYYY',
               controller: dateOfBirthController,
               keyboardType: TextInputType.datetime,
             ),
-
             AuthField(
               label: 'Password',
-              hint: '●●●●●●●●',
+              hint: 'Enter password',
               controller: passwordController,
               isPassword: true,
               hidden: !isPasswordVisible,
@@ -160,29 +183,30 @@ class _CreateAccountViewState extends State<CreateAccountView> {
                 });
               },
             ),
-
             AuthField(
               label: 'Confirm Password',
-              hint: '●●●●●●●●',
+              hint: 'Confirm password',
               controller: confirmPasswordController,
               isPassword: true,
               hidden: !isConfirmPasswordVisible,
               onEyeTap: () {
                 setState(() {
-                  isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                  isConfirmPasswordVisible =
+                  !isConfirmPasswordVisible;
                 });
               },
             ),
-
-            // Terms text
+            const SizedBox(height: 8),
             Text(
-              'By continuing, you agree to\nTerms of Use and Privacy Policy.',
+              'By continuing, you agree to\n'
+                  'Terms of Use and Privacy Policy.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 9, color: dark),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: secondaryText,
+              ),
             ),
-
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 16),
             BlocBuilder<SignupBloc, SignupState>(
               builder: (context, state) {
                 return GreenButton(
@@ -192,20 +216,19 @@ class _CreateAccountViewState extends State<CreateAccountView> {
                 );
               },
             ),
-
             const SizedBox(height: 12),
-
             BottomText(
               normalText: 'Already have an account? ',
               linkText: 'Log In',
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const LoginScreen(),
+                  ),
                 );
               },
             ),
-
             const SizedBox(height: 25),
           ],
         ),

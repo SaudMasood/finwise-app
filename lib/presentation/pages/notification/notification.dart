@@ -1,16 +1,19 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
+
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color darkGreen = Color(0xFF063F3F);
-  static const Color blue = Color(0xFF168BFF);
-  static const Color softGreen = Color(0xFFDDF5E2);
+  static const Color mainGreen = AppColors.primaryGreen;
+  static const Color lightGreen = AppColors.lightGreen;
+  static const Color darkGreen = AppColors.darkGreen;
+  static const Color blue = AppColors.strongBlue;
+  static const Color softGreen = AppColors.softGreen;
 
   static const List<String> _months = [
     'January',
@@ -27,18 +30,38 @@ class NotificationScreen extends StatelessWidget {
     'December',
   ];
 
-  static TextStyle _t(
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color _background(BuildContext context) =>
+      _isDark(context) ? AppColors.darkBackground : mainGreen;
+
+  Color _surface(BuildContext context) =>
+      _isDark(context) ? AppColors.darkSurface : lightGreen;
+
+  Color _textColor(BuildContext context) =>
+      _isDark(context) ? AppColors.darkText : darkGreen;
+
+  Color _secondaryText(BuildContext context) =>
+      _isDark(context) ? AppColors.darkSecondaryText : darkGreen;
+
+  Color _dividerColor(BuildContext context) =>
+      _isDark(context) ? AppColors.darkDivider : mainGreen;
+
+  TextStyle _t(
+      BuildContext context,
       double size, {
         FontWeight w = FontWeight.w400,
-        Color c = darkGreen,
+        Color? c,
         double? height,
-      }) =>
-      GoogleFonts.poppins(
-        fontSize: size,
-        fontWeight: w,
-        color: c,
-        height: height,
-      );
+      }) {
+    return GoogleFonts.poppins(
+      fontSize: size,
+      fontWeight: w,
+      color: c ?? _textColor(context),
+      height: height,
+    );
+  }
 
   DateTime? parseDate(dynamic value) {
     if (value is Timestamp) return value.toDate();
@@ -63,13 +86,16 @@ class NotificationScreen extends StatelessWidget {
     final day = DateTime(date.year, date.month, date.day);
 
     if (day == today) return 'Today';
+
     if (day == today.subtract(const Duration(days: 1))) {
       return 'Yesterday';
     }
 
     final startOfWeek =
     today.subtract(Duration(days: today.weekday - DateTime.monday));
-    final startOfLastWeek = startOfWeek.subtract(const Duration(days: 7));
+
+    final startOfLastWeek =
+    startOfWeek.subtract(const Duration(days: 7));
 
     if (!day.isBefore(startOfWeek)) return 'This Week';
     if (!day.isBefore(startOfLastWeek)) return 'Last Week';
@@ -145,23 +171,38 @@ class NotificationScreen extends StatelessWidget {
       BuildContext context,
       List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
       ) async {
+    final isDark = _isDark(context);
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete all notifications?'),
-        content: const Text(
+        backgroundColor:
+        isDark ? AppColors.darkSurface : AppColors.white,
+        title: Text(
+          'Delete all notifications?',
+          style: _t(dialogContext, 17, w: FontWeight.w600),
+        ),
+        content: Text(
           'Your notification history will be deleted.',
+          style: _t(
+            dialogContext,
+            13,
+            c: _secondaryText(dialogContext),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: _t(dialogContext, 13),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Delete all',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -200,7 +241,11 @@ class NotificationScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _onMenuSelected(BuildContext context, String value, User user) async {
+  Future<void> _onMenuSelected(
+      BuildContext context,
+      String value,
+      User user,
+      ) async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -212,6 +257,14 @@ class NotificationScreen extends StatelessWidget {
 
       if (value == 'read') {
         await markAllAsRead(snapshot.docs);
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All notifications marked as read.'),
+          ),
+        );
       } else if (value == 'delete') {
         await deleteAll(context, snapshot.docs);
       }
@@ -226,32 +279,36 @@ class NotificationScreen extends StatelessWidget {
     }
   }
 
-  Widget _bellCircle() {
+  Widget _bellCircle(BuildContext context) {
+    final isDark = _isDark(context);
+
     return Container(
       width: 38,
       height: 38,
-      decoration: const BoxDecoration(
-        color: lightGreen,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : lightGreen,
         shape: BoxShape.circle,
       ),
-      child: const Icon(
+      child: Icon(
         Icons.notifications_none_rounded,
-        color: darkGreen,
+        color: isDark ? AppColors.darkText : darkGreen,
         size: 22,
       ),
     );
   }
 
   Widget _header(BuildContext context, User? user) {
+    final isDark = _isDark(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 24, 22),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back,
-              color: Colors.white,
+              color: isDark ? AppColors.darkText : AppColors.white,
               size: 24,
             ),
           ),
@@ -259,38 +316,54 @@ class NotificationScreen extends StatelessWidget {
             child: Center(
               child: Text(
                 'Notification',
-                style: _t(18, w: FontWeight.w700),
+                style: _t(
+                  context,
+                  18,
+                  w: FontWeight.w700,
+                  c: isDark ? AppColors.darkText : AppColors.white,
+                ),
               ),
             ),
           ),
           if (user != null)
             PopupMenuButton<String>(
-              onSelected: (value) => _onMenuSelected(context, value, user),
-              itemBuilder: (context) => const [
+              color: isDark ? AppColors.darkSurface : AppColors.white,
+              onSelected: (value) =>
+                  _onMenuSelected(context, value, user),
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'read',
-                  child: Text('Mark all read'),
+                  child: Text(
+                    'Mark all read',
+                    style: _t(context, 13),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text('Delete all'),
+                  child: Text(
+                    'Delete all',
+                    style: _t(context, 13),
+                  ),
                 ),
               ],
-              child: _bellCircle(),
+              child: _bellCircle(context),
             )
           else
-            _bellCircle(),
+            _bellCircle(context),
         ],
       ),
     );
   }
 
-  Widget _badge(String type) {
+  Widget _badge(BuildContext context, String type) {
+    final isDark = _isDark(context);
+    final iconColor = isDark ? AppColors.darkText : darkGreen;
+
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: mainGreen,
+        color: isDark ? AppColors.darkCard : mainGreen,
         borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
@@ -299,18 +372,21 @@ class NotificationScreen extends StatelessWidget {
         width: 22,
         height: 22,
         decoration: BoxDecoration(
-          border: Border.all(color: darkGreen, width: 1.6),
+          border: Border.all(
+            color: iconColor,
+            width: 1.6,
+          ),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(
           notificationIcon(type),
-          color: darkGreen,
+          color: iconColor,
           size: 15,
         ),
       )
           : Icon(
         notificationIcon(type),
-        color: darkGreen,
+        color: iconColor,
         size: 25,
       ),
     );
@@ -345,9 +421,12 @@ class NotificationScreen extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: mainGreen, width: 1),
+            bottom: BorderSide(
+              color: _dividerColor(context),
+              width: 1,
+            ),
           ),
         ),
         child: Column(
@@ -356,7 +435,7 @@ class NotificationScreen extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _badge(type),
+                _badge(context, type),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -367,7 +446,11 @@ class NotificationScreen extends StatelessWidget {
                           Expanded(
                             child: Text(
                               title,
-                              style: _t(13, w: FontWeight.w600),
+                              style: _t(
+                                context,
+                                13,
+                                w: FontWeight.w600,
+                              ),
                             ),
                           ),
                           if (!isRead)
@@ -381,14 +464,24 @@ class NotificationScreen extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         message,
-                        style: _t(10.5, height: 1.35),
+                        style: _t(
+                          context,
+                          10.5,
+                          c: _secondaryText(context),
+                          height: 1.35,
+                        ),
                       ),
                       if (details.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             details,
-                            style: _t(9.5, w: FontWeight.w600, c: blue),
+                            style: _t(
+                              context,
+                              9.5,
+                              w: FontWeight.w600,
+                              c: blue,
+                            ),
                           ),
                         ),
                     ],
@@ -401,7 +494,11 @@ class NotificationScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 formatDate(date),
-                style: _t(9.5, c: blue),
+                style: _t(
+                  context,
+                  9.5,
+                  c: blue,
+                ),
               ),
             ),
           ],
@@ -410,12 +507,13 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _body(User? user) {
+  Widget _body(BuildContext context, User? user) {
     if (user == null) {
       return Center(
         child: Text(
           'Please log in to view notifications.',
-          style: _t(12),
+          style: _t(context, 12),
+          textAlign: TextAlign.center,
         ),
       );
     }
@@ -432,7 +530,7 @@ class NotificationScreen extends StatelessWidget {
           return Center(
             child: Text(
               'Unable to load notifications.',
-              style: _t(12),
+              style: _t(context, 12),
             ),
           );
         }
@@ -450,13 +548,18 @@ class NotificationScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.notifications_none_rounded,
                   size: 48,
-                  color: mainGreen,
+                  color: _isDark(context)
+                      ? AppColors.darkSecondaryText
+                      : mainGreen,
                 ),
                 const SizedBox(height: 8),
-                Text('No notifications yet', style: _t(12)),
+                Text(
+                  'No notifications yet',
+                  style: _t(context, 12),
+                ),
               ],
             ),
           );
@@ -487,7 +590,12 @@ class NotificationScreen extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16, bottom: 4),
               child: Text(
                 group,
-                style: _t(11, w: FontWeight.w500),
+                style: _t(
+                  context,
+                  11,
+                  w: FontWeight.w500,
+                  c: _secondaryText(context),
+                ),
               ),
             ),
           );
@@ -514,9 +622,10 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final isDark = _isDark(context);
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: _background(context),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -525,9 +634,9 @@ class NotificationScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: _surface(context),
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(50),
                   ),
                 ),
@@ -535,7 +644,7 @@ class NotificationScreen extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(50),
                   ),
-                  child: _body(user),
+                  child: _body(context, user),
                 ),
               ),
             ),

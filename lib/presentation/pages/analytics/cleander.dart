@@ -1,3 +1,4 @@
+
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -8,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/clenderdatasorce.dart';
 import '../../../data/repositories/analytics/clnder_repo_impp.dart';
 import '../../../domain/usecases/analytics/get_clender_tran.dart';
@@ -15,16 +17,6 @@ import '../../bloc/analytics/clender_bloc.dart';
 import '../../bloc/analytics/clender_event.dart';
 import '../../bloc/analytics/clender_state.dart';
 
-// Colors
-const green = Color(0xFF00D09E);
-const lightGreen = Color(0xFFF1FFF3);
-const softGreen = Color(0xFFDDF5E2);
-const dark = Color(0xFF052224);
-const blue = Color(0xFF168BFF);
-
-// ---------------------------------------------------
-// Screen: only creates the Bloc (logic is same as before)
-// ---------------------------------------------------
 class CalendarScreen extends StatelessWidget {
   const CalendarScreen({super.key});
 
@@ -34,20 +26,21 @@ class CalendarScreen extends StatelessWidget {
       firestore: FirebaseFirestore.instance,
       firebaseAuth: FirebaseAuth.instance,
     );
+
     final repository = CalendarRepositoryImpl(dataSource: dataSource);
-    final useCase = GetCalendarTransactionsUseCase(repository: repository);
+    final useCase = GetCalendarTransactionsUseCase(
+      repository: repository,
+    );
 
     return BlocProvider(
-      create: (_) => CalendarBloc(getCalendarTransactionsUseCase: useCase)
-        ..add(SelectCalendarDate(date: DateTime.now())),
+      create: (_) => CalendarBloc(
+        getCalendarTransactionsUseCase: useCase,
+      )..add(SelectCalendarDate(date: DateTime.now())),
       child: const CalendarView(),
     );
   }
 }
 
-// ---------------------------------------------------
-// View: the UI
-// ---------------------------------------------------
 class CalendarView extends StatefulWidget {
   const CalendarView({super.key});
 
@@ -56,25 +49,57 @@ class CalendarView extends StatefulWidget {
 }
 
 class _CalendarViewState extends State<CalendarView> {
-  bool showSpends = true; // true = Spends, false = Categories
-  DateTime visibleMonth = DateTime.now(); // month shown in calendar
+  bool showSpends = true;
+  DateTime visibleMonth = DateTime.now();
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get green => AppColors.primaryGreen;
+
+  Color get panelColor => isDark
+      ? Theme.of(context).colorScheme.surface
+      : AppColors.lightBackground;
+
+  Color get cardColor => isDark
+      ? Theme.of(context).colorScheme.surfaceContainerHighest
+      : AppColors.softGreen;
+
+  Color get textColor => isDark
+      ? Theme.of(context).colorScheme.onSurface
+      : AppColors.darkGreen;
+
+  Color get secondaryTextColor => isDark
+      ? AppColors.darkSecondaryText
+      : AppColors.darkGreen.withOpacity(0.65);
+
+  Color get blue => AppColors.calendarBlue;
+
+  Color get screenBackground => isDark
+      ? Theme.of(context).scaffoldBackgroundColor
+      : AppColors.primaryGreen;
+
+  Color get activeTextColor =>
+      isDark ? AppColors.darkBackground : Colors.white;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: green,
+      backgroundColor: screenBackground,
       body: SafeArea(
-        bottom: false,
+        bottom: true,
         child: Column(
           children: [
-            // ----- Top bar -----
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back, color: dark),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: isDark ? textColor : Colors.white,
+                    ),
                   ),
                   Expanded(
                     child: Text(
@@ -83,28 +108,31 @@ class _CalendarViewState extends State<CalendarView> {
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: dark,
+                        color: isDark ? textColor : Colors.white,
                       ),
                     ),
                   ),
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 17,
-                    backgroundColor: lightGreen,
-                    child: Icon(Icons.notifications_none, color: dark, size: 20),
+                    backgroundColor: panelColor,
+                    child: Icon(
+                      Icons.notifications_none,
+                      color: textColor,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 40), // green space like Figma
-
-            // ----- White rounded sheet -----
+            const SizedBox(height: 40),
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(50)),
+                decoration: BoxDecoration(
+                  color: panelColor,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(50),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -116,7 +144,6 @@ class _CalendarViewState extends State<CalendarView> {
                     tabButtons(),
                     const SizedBox(height: 16),
                     Expanded(child: content()),
-                    bottomBar(),
                   ],
                 ),
               ),
@@ -127,40 +154,61 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
-  // ----- Month (left) and Year (right) -----
   Widget monthYearRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Tap month = previous month
           GestureDetector(
             onTap: () {
               setState(() {
-                visibleMonth = DateTime(visibleMonth.year, visibleMonth.month - 1);
+                visibleMonth = DateTime(
+                  visibleMonth.year,
+                  visibleMonth.month - 1,
+                );
               });
             },
             child: Row(
               children: [
-                Text(DateFormat('MMMM').format(visibleMonth),
-                    style: GoogleFonts.poppins(fontSize: 12, color: green)),
-                const Icon(Icons.keyboard_arrow_down, size: 18, color: green),
+                Text(
+                  DateFormat('MMMM').format(visibleMonth),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: green,
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 18,
+                  color: green,
+                ),
               ],
             ),
           ),
-          // Tap year = next year
           GestureDetector(
             onTap: () {
               setState(() {
-                visibleMonth = DateTime(visibleMonth.year + 1, visibleMonth.month);
+                visibleMonth = DateTime(
+                  visibleMonth.year + 1,
+                  visibleMonth.month,
+                );
               });
             },
             child: Row(
               children: [
-                Text('${visibleMonth.year}',
-                    style: GoogleFonts.poppins(fontSize: 12, color: green)),
-                const Icon(Icons.keyboard_arrow_down, size: 18, color: green),
+                Text(
+                  '${visibleMonth.year}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: green,
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 18,
+                  color: green,
+                ),
               ],
             ),
           ),
@@ -169,11 +217,17 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
-  // ----- Calendar days -----
   Widget calendarGrid() {
-    final firstDay = DateTime(visibleMonth.year, visibleMonth.month, 1);
-    final daysInMonth = DateTime(visibleMonth.year, visibleMonth.month + 1, 0).day;
-    final emptyCells = firstDay.weekday - 1; // Monday = 0 empty cells
+    final firstDay = DateTime(
+      visibleMonth.year,
+      visibleMonth.month,
+      1,
+    );
+
+    final daysInMonth =
+        DateTime(visibleMonth.year, visibleMonth.month + 1, 0).day;
+
+    final emptyCells = firstDay.weekday - 1;
 
     const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -181,43 +235,53 @@ class _CalendarViewState extends State<CalendarView> {
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         children: [
-          // Week day names
           Row(
             children: [
-              for (final n in names)
+              for (final name in names)
                 Expanded(
                   child: Text(
-                    n,
+                    name,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(fontSize: 9, color: blue),
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      color: blue,
+                    ),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 6),
-
-          // Dates (7 columns)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: emptyCells + daysInMonth,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               childAspectRatio: 1.4,
             ),
             itemBuilder: (context, index) {
-              if (index < emptyCells) return const SizedBox(); // empty cell
+              if (index < emptyCells) {
+                return const SizedBox();
+              }
 
               final day = index - emptyCells + 1;
-              final date = DateTime(visibleMonth.year, visibleMonth.month, day);
+              final date = DateTime(
+                visibleMonth.year,
+                visibleMonth.month,
+                day,
+              );
 
               return BlocBuilder<CalendarBloc, CalendarState>(
                 builder: (context, state) {
-                  final selected = DateUtils.isSameDay(date, state.selectedDate);
+                  final selected =
+                  DateUtils.isSameDay(date, state.selectedDate);
 
                   return GestureDetector(
                     onTap: () {
-                      context.read<CalendarBloc>().add(SelectCalendarDate(date: date));
+                      context.read<CalendarBloc>().add(
+                        SelectCalendarDate(date: date),
+                      );
                     },
                     child: Center(
                       child: Container(
@@ -232,7 +296,9 @@ class _CalendarViewState extends State<CalendarView> {
                           '$day',
                           style: GoogleFonts.poppins(
                             fontSize: 10,
-                            color: selected ? Colors.white : dark,
+                            color: selected
+                                ? activeTextColor
+                                : textColor,
                           ),
                         ),
                       ),
@@ -247,7 +313,6 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
-  // ----- Spends / Categories buttons -----
   Widget tabButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -265,44 +330,62 @@ class _CalendarViewState extends State<CalendarView> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          showSpends = (text == 'Spends');
+          showSpends = text == 'Spends';
         });
       },
       child: Container(
         height: 34,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? green : softGreen,
+          color: active ? green : cardColor,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text(text, style: GoogleFonts.poppins(fontSize: 11, color: dark)),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            color: active ? activeTextColor : textColor,
+          ),
+        ),
       ),
     );
   }
 
-  // ----- Loading / Error / List / Chart -----
   Widget content() {
     return BlocBuilder<CalendarBloc, CalendarState>(
       builder: (context, state) {
         if (state.status == CalendarStatus.loading) {
-          return const Center(child: CircularProgressIndicator(color: green));
+          return Center(
+            child: CircularProgressIndicator(color: green),
+          );
         }
 
         if (state.status == CalendarStatus.failure) {
-          return Center(child: Text(state.errorMessage ?? 'Something went wrong'));
+          return Center(
+            child: Text(
+              state.errorMessage ?? 'Something went wrong',
+              style: GoogleFonts.poppins(color: textColor),
+            ),
+          );
         }
 
-        return showSpends ? spendsList(state) : categoriesChart(state);
+        return showSpends
+            ? spendsList(state)
+            : categoriesChart(state);
       },
     );
   }
 
-  // ----- Spends list -----
   Widget spendsList(CalendarState state) {
     if (state.transactions.isEmpty) {
       return Center(
-        child: Text('No transactions on this date',
-            style: GoogleFonts.poppins(fontSize: 12, color: dark)),
+        child: Text(
+          'No transactions on this date',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: textColor,
+          ),
+        ),
       );
     }
 
@@ -310,72 +393,89 @@ class _CalendarViewState extends State<CalendarView> {
       padding: const EdgeInsets.symmetric(horizontal: 25),
       itemCount: state.transactions.length,
       itemBuilder: (context, index) {
-        final t = state.transactions[index];
-        final income = t.type.toLowerCase() == 'income';
+        final transaction = state.transactions[index];
+        final income =
+            transaction.type.toLowerCase() == 'income';
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Row(
             children: [
-              // Icon box
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: income ? const Color(0xFF6FB6FF) : blue,
+                  color: income
+                      ? const Color(0xFF6FB6FF)
+                      : blue,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(categoryIcon(t.category), color: Colors.white),
+                child: Icon(
+                  categoryIcon(transaction.category),
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 12),
-
-              // Title and time
               Expanded(
                 flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      t.title.isEmpty ? t.category : t.title,
+                      transaction.title.isEmpty
+                          ? transaction.category
+                          : transaction.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
-                          fontSize: 12, fontWeight: FontWeight.w600, color: dark),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
                     ),
                     Text(
-                      DateFormat('HH:mm - MMMM dd').format(t.date),
-                      style: GoogleFonts.poppins(fontSize: 9, color: blue),
+                      DateFormat('HH:mm - MMMM dd')
+                          .format(transaction.date),
+                      style: GoogleFonts.poppins(
+                        fontSize: 9,
+                        color: secondaryTextColor,
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              Container(width: 1, height: 36, color: green), // line
-
-              // Category
+              Container(
+                width: 1,
+                height: 36,
+                color: green.withOpacity(0.7),
+              ),
               Expanded(
                 flex: 2,
                 child: Text(
-                  t.category,
+                  transaction.category,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(fontSize: 10, color: dark),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: textColor,
+                  ),
                 ),
               ),
-
-              Container(width: 1, height: 36, color: green), // line
-
-              // Amount
+              Container(
+                width: 1,
+                height: 36,
+                color: green.withOpacity(0.7),
+              ),
               Expanded(
                 flex: 2,
                 child: Text(
-                  '${income ? '' : '-'}\$${t.amount.toStringAsFixed(2)}',
+                  '${income ? '' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
                   textAlign: TextAlign.right,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: income ? dark : blue,
+                    color: income ? green : blue,
                   ),
                 ),
               ),
@@ -386,18 +486,23 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
-  // ----- Categories chart -----
   Widget categoriesChart(CalendarState state) {
-    // Add up amount of each category
     final Map<String, double> totals = {};
-    for (final t in state.transactions) {
-      totals[t.category] = (totals[t.category] ?? 0) + t.amount;
+
+    for (final transaction in state.transactions) {
+      totals[transaction.category] =
+          (totals[transaction.category] ?? 0) + transaction.amount;
     }
 
     if (totals.isEmpty) {
       return Center(
-        child: Text('No categories on this date',
-            style: GoogleFonts.poppins(fontSize: 12, color: dark)),
+        child: Text(
+          'No categories on this date',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: textColor,
+          ),
+        ),
       );
     }
 
@@ -412,17 +517,17 @@ class _CalendarViewState extends State<CalendarView> {
     final values = totals.values.toList();
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
-          // Half pie chart
           SizedBox(
             width: 220,
             height: 110,
-            child: CustomPaint(painter: HalfPie(values, colors)),
+            child: CustomPaint(
+              painter: HalfPie(values, colors),
+            ),
           ),
           const SizedBox(height: 14),
-
-          // Legend (dot + name)
           Wrap(
             spacing: 24,
             runSpacing: 8,
@@ -436,9 +541,14 @@ class _CalendarViewState extends State<CalendarView> {
                       backgroundColor: colors[i % colors.length],
                     ),
                     const SizedBox(width: 6),
-                    Text(names[i],
-                        style: GoogleFonts.poppins(
-                            fontSize: 10, fontWeight: FontWeight.w600, color: dark)),
+                    Text(
+                      names[i],
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
                   ],
                 ),
             ],
@@ -448,61 +558,33 @@ class _CalendarViewState extends State<CalendarView> {
     );
   }
 
-  // ----- Bottom bar (design only) -----
-  Widget bottomBar() {
-    return Container(
-      height: 80,
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: const BoxDecoration(
-        color: softGreen,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          navIcon(Icons.home_outlined, false),
-          navIcon(Icons.search, true), // active
-          navIcon(Icons.swap_horiz, false),
-          navIcon(Icons.layers_outlined, false),
-          navIcon(Icons.person_outline, false),
-        ],
-      ),
-    );
-  }
-
-  Widget navIcon(IconData icon, bool active) {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: active ? green : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Icon(icon, color: dark, size: 26),
-    );
-  }
-
-  // ----- Icon for each category -----
   IconData categoryIcon(String category) {
     final name = category.toLowerCase();
 
     if (name.contains('food') || name.contains('grocer')) {
       return Icons.shopping_basket_outlined;
     }
-    if (name.contains('transport')) return Icons.directions_bus_outlined;
-    if (name.contains('rent')) return Icons.key_outlined;
+
+    if (name.contains('transport')) {
+      return Icons.directions_bus_outlined;
+    }
+
+    if (name.contains('rent')) {
+      return Icons.key_outlined;
+    }
+
     if (name.contains('medicine') || name.contains('health')) {
       return Icons.medication_outlined;
     }
-    if (name.contains('saving')) return Icons.savings_outlined;
+
+    if (name.contains('saving')) {
+      return Icons.savings_outlined;
+    }
 
     return Icons.category_outlined;
   }
 }
 
-// ---------------------------------------------------
-// Half pie chart painter
-// ---------------------------------------------------
 class HalfPie extends CustomPainter {
   final List<double> values;
   final List<Color> colors;
@@ -512,22 +594,29 @@ class HalfPie extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final total = values.fold<double>(0, (a, b) => a + b);
-    if (total == 0) return;
+
+    if (total == 0 || colors.isEmpty) return;
 
     final radius = size.width / 2;
     final center = Offset(radius, size.height);
-    final rect = Rect.fromCircle(center: center, radius: radius);
+    final rect = Rect.fromCircle(
+      center: center,
+      radius: radius,
+    );
 
-    double start = math.pi; // start from the left side
+    double start = math.pi;
 
     for (int i = 0; i < values.length; i++) {
-      final sweep = values[i] / total * math.pi; // size of this slice
+      final sweep = values[i] / total * math.pi;
 
-      // Colored slice
-      canvas.drawArc(rect, start, sweep, true,
-          Paint()..color = colors[i % colors.length]);
+      canvas.drawArc(
+        rect,
+        start,
+        sweep,
+        true,
+        Paint()..color = colors[i % colors.length],
+      );
 
-      // White border
       canvas.drawArc(
         rect,
         start,
@@ -539,16 +628,16 @@ class HalfPie extends CustomPainter {
           ..strokeWidth = 3,
       );
 
-      // Percentage text in the middle of the slice
       final mid = start + sweep / 2;
+
       final pos = Offset(
         center.dx + math.cos(mid) * radius * 0.65,
         center.dy + math.sin(mid) * radius * 0.65,
       );
+
       final text = TextPainter(
         text: TextSpan(
-          text:
-          '${(values[i] / total * 100).toStringAsFixed(0)}%',
+          text: '${(values[i] / total * 100).toStringAsFixed(0)}%',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,
@@ -558,7 +647,10 @@ class HalfPie extends CustomPainter {
         textDirection: ui.TextDirection.ltr,
       )..layout();
 
-      text.paint(canvas, pos - Offset(text.width / 2, text.height / 2));
+      text.paint(
+        canvas,
+        pos - Offset(text.width / 2, text.height / 2),
+      );
 
       start += sweep;
     }

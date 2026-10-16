@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
+
 class FingerprintResultScreen extends StatefulWidget {
   final bool deleted;
 
@@ -17,14 +19,13 @@ class FingerprintResultScreen extends StatefulWidget {
 
 class _FingerprintResultScreenState extends State<FingerprintResultScreen>
     with SingleTickerProviderStateMixin {
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
-
   late final AnimationController controller;
   late final Animation<double> circleAnimation;
   late final Animation<double> tickAnimation;
   late final Animation<double> textAnimation;
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
 
   @override
   void initState() {
@@ -61,16 +62,26 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
 
   @override
   Widget build(BuildContext context) {
-    final String title = widget.deleted
+    final background =
+    isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+    final animationColor =
+    isDark ? AppColors.darkText : AppColors.softGreen;
+    final textColor = isDark ? AppColors.darkText : AppColors.white;
+    final buttonColor =
+    isDark ? AppColors.darkCard : AppColors.lightGreen;
+    final buttonTextColor =
+    isDark ? AppColors.darkText : AppColors.darkGreen;
+
+    final title = widget.deleted
         ? 'Fingerprint Deleted Successfully'
         : 'Fingerprint Added Successfully';
 
-    final String subtitle = widget.deleted
+    final subtitle = widget.deleted
         ? 'Your fingerprint has been removed from FinWise.'
         : 'Your fingerprint has been enabled for FinWise access.';
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: background,
       body: SafeArea(
         child: Center(
           child: AnimatedBuilder(
@@ -95,7 +106,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: lightGreen,
+                                  color: animationColor,
                                   width: 4,
                                 ),
                               ),
@@ -110,8 +121,8 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                                 child: Container(
                                   width: 9,
                                   height: 9,
-                                  decoration: const BoxDecoration(
-                                    color: lightGreen,
+                                  decoration: BoxDecoration(
+                                    color: animationColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -124,7 +135,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                                 child: CustomPaint(
                                   painter: FingerprintTickPainter(
                                     progress: tickAnimation.value,
-                                    color: lightGreen,
+                                    color: animationColor,
                                   ),
                                 ),
                               ),
@@ -139,7 +150,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                         title,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           height: 1.5,
@@ -153,7 +164,7 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                         subtitle,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 11,
                           height: 1.5,
                         ),
@@ -173,8 +184,8 @@ class _FingerprintResultScreenState extends State<FingerprintResultScreen>
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: lightGreen,
-                            foregroundColor: darkGreen,
+                            backgroundColor: buttonColor,
+                            foregroundColor: buttonTextColor,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
@@ -225,7 +236,6 @@ class FingerprintTickPainter extends CustomPainter {
       ..lineTo(size.width * 0.84, size.height * 0.28);
 
     final metrics = path.computeMetrics().first;
-
     final animatedPath = metrics.extractPath(
       0,
       metrics.length * progress.clamp(0.0, 1.0),

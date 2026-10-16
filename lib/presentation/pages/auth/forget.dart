@@ -1,8 +1,10 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../core/wigit/authn_wid.dart';
 import '../../../data/datasources/facebooklogind.dart';
 import '../../../data/datasources/forgetpassdatas.dart';
@@ -21,7 +23,6 @@ import '../../bloc/auth/login/login_state.dart';
 import '../MainScreen/mainscreen.dart';
 import 'securitypin.dart';
 
-
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -34,6 +35,7 @@ class ForgotPasswordScreen extends StatelessWidget {
             final dataSource = ForgotPasswordDataSource(
               firebaseAuth: FirebaseAuth.instance,
             );
+
             final repository = ForgotPasswordRepositoryImpl(
               dataSource: dataSource,
             );
@@ -45,27 +47,28 @@ class ForgotPasswordScreen extends StatelessWidget {
             );
           },
         ),
-
         BlocProvider<LoginBloc>(
           create: (_) {
+            final auth = FirebaseAuth.instance;
+
             final loginDataSource = LoginDataSource(
-              firebaseAuth: FirebaseAuth.instance,
+              firebaseAuth: auth,
             );
-            final googleLoginDataSource = GoogleLoginDataSource(
-              firebaseAuth: FirebaseAuth.instance,
+            final googleDataSource = GoogleLoginDataSource(
+              firebaseAuth: auth,
             );
-            final facebookLoginDataSource = FacebookLoginDataSource(
-              firebaseAuth: FirebaseAuth.instance,
+            final facebookDataSource = FacebookLoginDataSource(
+              firebaseAuth: auth,
             );
 
-            final authRepository = AuthRepositoryImpl(
+            final repository = AuthRepositoryImpl(
               loginDataSource: loginDataSource,
-              googleLoginDataSource: googleLoginDataSource,
-              facebookLoginDataSource: facebookLoginDataSource,
+              googleLoginDataSource: googleDataSource,
+              facebookLoginDataSource: facebookDataSource,
             );
 
             return LoginBloc(
-              loginUseCase: LoginUseCase(repository: authRepository),
+              loginUseCase: LoginUseCase(repository: repository),
             );
           },
         ),
@@ -91,13 +94,14 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     super.dispose();
   }
 
-  // Called when "Next Step" is pressed
   void sendReset() {
     final email = emailController.text.trim();
 
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email.')),
+        const SnackBar(
+          content: Text('Please enter your email.'),
+        ),
       );
       return;
     }
@@ -109,23 +113,30 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to both blocs
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final secondaryText = isDark
+        ? AppColors.darkSecondaryText
+        : AppColors.lightSecondaryText;
+
     return MultiBlocListener(
       listeners: [
-        // Reset email result
         BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
           listener: (context, state) {
             if (state is ForgotPasswordSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Password reset email sent successfully.'),
+                  content: Text(
+                    'Password reset email sent successfully.',
+                  ),
                 ),
               );
 
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SecurityPinScreen(
+                  builder: (_) => SecurityPinScreen(
                     email: emailController.text.trim(),
                   ),
                 ),
@@ -139,14 +150,14 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             }
           },
         ),
-
-        // Social login result
         BlocListener<LoginBloc, LoginState>(
           listener: (context, state) {
             if (state is LoginSuccess) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const MainScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const MainScreen(),
+                ),
               );
             }
 
@@ -164,38 +175,31 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-
-            // Heading
             Text(
               'Reset Password?',
               style: GoogleFonts.poppins(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: dark,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 6),
-
-            // Small description
             Text(
-              'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do '
-                  'eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-              style: GoogleFonts.poppins(fontSize: 9, height: 1.3, color: dark),
+              'Enter your email address to reset your password.',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                height: 1.4,
+                color: secondaryText,
+              ),
             ),
-
             const SizedBox(height: 40),
-
-            // Email field
             AuthField(
               label: 'Enter Email Address',
               hint: 'example@example.com',
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-
             const SizedBox(height: 20),
-
-            // Next Step button (shows loading spinner)
             Center(
               child: BlocBuilder<ForgotPasswordBloc, ForgotPasswordState>(
                 builder: (context, state) {
@@ -208,10 +212,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 },
               ),
             ),
-
             const SizedBox(height: 60),
-
-            // Sign Up button (same as before: does nothing yet)
             Center(
               child: GreenButton(
                 text: 'Sign Up',
@@ -220,25 +221,22 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 onTap: () {},
               ),
             ),
-
             const SizedBox(height: 14),
-
-            // Facebook and Google
             Center(
               child: SocialRow(
                 onFacebook: () {
-                  context
-                      .read<LoginBloc>()
-                      .add(const FacebookLoginButtonPressed());
+                  context.read<LoginBloc>().add(
+                    const FacebookLoginButtonPressed(),
+                  );
                 },
                 onGoogle: () {
-                  context.read<LoginBloc>().add(const GoogleLoginButtonPressed());
+                  context.read<LoginBloc>().add(
+                    const GoogleLoginButtonPressed(),
+                  );
                 },
               ),
             ),
-
             const SizedBox(height: 18),
-
             Center(
               child: BottomText(
                 normalText: 'Don’t have an account? ',
@@ -246,7 +244,6 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 onTap: () {},
               ),
             ),
-
             const SizedBox(height: 30),
           ],
         ),

@@ -1,9 +1,11 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/serchtransctiondatas.dart';
 import '../../../data/repositories/analytics/serchtransrepo.dart';
 import '../../../domain/usecases/analytics/serchtra.dart';
@@ -21,10 +23,7 @@ class SearchScreen extends StatelessWidget {
       firebaseAuth: FirebaseAuth.instance,
     );
 
-    final repository = SearchRepositoryImpl(
-      dataSource: dataSource,
-    );
-
+    final repository = SearchRepositoryImpl(dataSource: dataSource);
     final useCase = SearchTransactionsUseCase(
       repository: repository,
     );
@@ -46,18 +45,46 @@ class _SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<_SearchView> {
-  static const mainGreen = Color(0xFF00D09E);
-  static const lightGreen = Color(0xFFF1FFF3);
-  static const softGreen = Color(0xFFDFF7E2);
-  static const darkGreen = Color(0xFF052224);
-  static const blue = Color(0xFF6DB6FE);
-  static const strongBlue = Color(0xFF0068FF);
-
   final TextEditingController searchController = TextEditingController();
 
   String selectedCategory = '';
   String selectedType = 'expense';
   DateTime? selectedDate;
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get mainGreen => AppColors.primaryGreen;
+
+  Color get lightGreen => isDark
+      ? Theme.of(context).colorScheme.surface
+      : AppColors.lightBackground;
+
+  Color get softGreen => isDark
+      ? Theme.of(context).colorScheme.surfaceContainerHighest
+      : AppColors.softGreen;
+
+  Color get darkGreen => isDark
+      ? Theme.of(context).colorScheme.onSurface
+      : AppColors.darkGreen;
+
+  Color get blue => AppColors.blue;
+
+  Color get strongBlue => AppColors.strongBlue;
+
+  Color get screenBackground => isDark
+      ? Theme.of(context).scaffoldBackgroundColor
+      : AppColors.primaryGreen;
+
+  Color get searchFieldColor => isDark
+      ? AppColors.darkSearchField
+      : Colors.white;
+
+  Color get headerTextColor =>
+      isDark ? darkGreen : Colors.white;
+
+  Color get buttonTextColor =>
+      isDark ? AppColors.darkBackground : AppColors.darkGreen;
 
   @override
   void dispose() {
@@ -80,9 +107,9 @@ class _SearchViewState extends State<_SearchView> {
         }
 
         return Scaffold(
-          backgroundColor: mainGreen,
+          backgroundColor: screenBackground,
           body: SafeArea(
-            bottom: false,
+            bottom: true,
             child: Column(
               children: [
                 const SizedBox(height: 14),
@@ -91,12 +118,10 @@ class _SearchViewState extends State<_SearchView> {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Icon(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Colors.white,
+                          color: headerTextColor,
                           size: 28,
                         ),
                       ),
@@ -107,7 +132,7 @@ class _SearchViewState extends State<_SearchView> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: darkGreen,
+                              color: headerTextColor,
                             ),
                           ),
                         ),
@@ -115,11 +140,11 @@ class _SearchViewState extends State<_SearchView> {
                       Container(
                         width: 34,
                         height: 34,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: lightGreen,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.notifications_none,
                           size: 20,
                           color: darkGreen,
@@ -134,7 +159,7 @@ class _SearchViewState extends State<_SearchView> {
                   child: Container(
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: searchFieldColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: TextField(
@@ -142,13 +167,17 @@ class _SearchViewState extends State<_SearchView> {
                       textAlignVertical: TextAlignVertical.center,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: darkGreen,
+                        color: isDark
+                            ? AppColors.darkText
+                            : AppColors.darkGreen,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search...',
                         hintStyle: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: darkGreen.withOpacity(0.6),
+                          color: isDark
+                              ? AppColors.darkSecondaryText
+                              : AppColors.darkGreen.withOpacity(0.6),
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -164,15 +193,20 @@ class _SearchViewState extends State<_SearchView> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: lightGreen,
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(50),
                         topRight: Radius.circular(50),
                       ),
                     ),
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(32, 32, 32, 130),
+                      padding: const EdgeInsets.fromLTRB(
+                        32,
+                        32,
+                        32,
+                        32,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -219,7 +253,7 @@ class _SearchViewState extends State<_SearchView> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: darkGreen,
+                                      color: buttonTextColor,
                                     ),
                                   ),
                                 ),
@@ -228,9 +262,9 @@ class _SearchViewState extends State<_SearchView> {
                           ),
                           const SizedBox(height: 28),
                           if (state is SearchLoading)
-                            const Center(
+                            Center(
                               child: Padding(
-                                padding: EdgeInsets.all(15),
+                                padding: const EdgeInsets.all(15),
                                 child: CircularProgressIndicator(
                                   color: mainGreen,
                                 ),
@@ -245,12 +279,13 @@ class _SearchViewState extends State<_SearchView> {
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.poppins(
                                     fontSize: 11,
-                                    color: Colors.red,
+                                    color: AppColors.error,
                                   ),
                                 ),
                               ),
                             ),
-                          if (state is SearchSuccess) _buildResults(state),
+                          if (state is SearchSuccess)
+                            _buildResults(state),
                         ],
                       ),
                     ),
@@ -278,18 +313,16 @@ class _SearchViewState extends State<_SearchView> {
   Widget _buildCategoryField(List<String> categories) {
     return GestureDetector(
       onTap: () async {
-        if (categories.isEmpty) {
-          return;
-        }
+        if (categories.isEmpty) return;
 
         final result = await showModalBottomSheet<String>(
           context: context,
           backgroundColor: Colors.transparent,
-          builder: (context) {
+          builder: (sheetContext) {
             return Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: lightGreen,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
@@ -308,8 +341,8 @@ class _SearchViewState extends State<_SearchView> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    ...categories.map((category) {
-                      return ListTile(
+                    ...categories.map(
+                          (category) => ListTile(
                         title: Text(
                           category,
                           style: GoogleFonts.poppins(
@@ -318,10 +351,10 @@ class _SearchViewState extends State<_SearchView> {
                           ),
                         ),
                         onTap: () {
-                          Navigator.pop(context, category);
+                          Navigator.pop(sheetContext, category);
                         },
-                      );
-                    }),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -329,10 +362,10 @@ class _SearchViewState extends State<_SearchView> {
           },
         );
 
+        if (!mounted) return;
+
         if (result != null) {
-          setState(() {
-            selectedCategory = result;
-          });
+          setState(() => selectedCategory = result);
         }
       },
       child: Container(
@@ -358,7 +391,7 @@ class _SearchViewState extends State<_SearchView> {
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down,
               size: 20,
               color: mainGreen,
@@ -377,12 +410,29 @@ class _SearchViewState extends State<_SearchView> {
           initialDate: selectedDate ?? DateTime.now(),
           firstDate: DateTime(2020),
           lastDate: DateTime(2100),
+          builder: (context, child) {
+            final theme = Theme.of(context);
+
+            return Theme(
+              data: theme.copyWith(
+                colorScheme: theme.colorScheme.copyWith(
+                  primary: mainGreen,
+                  surface: lightGreen,
+                  onSurface: darkGreen,
+                ),
+                dialogTheme: DialogThemeData(
+                  backgroundColor: lightGreen,
+                ),
+              ),
+              child: child!,
+            );
+          },
         );
 
+        if (!mounted) return;
+
         if (date != null) {
-          setState(() {
-            selectedDate = date;
-          });
+          setState(() => selectedDate = date);
         }
       },
       child: Container(
@@ -413,10 +463,10 @@ class _SearchViewState extends State<_SearchView> {
                 color: mainGreen,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.calendar_month_outlined,
                 size: 15,
-                color: darkGreen,
+                color: buttonTextColor,
               ),
             ),
           ],
@@ -429,11 +479,7 @@ class _SearchViewState extends State<_SearchView> {
     final bool selected = selectedType == value;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedType = value;
-        });
-      },
+      onTap: () => setState(() => selectedType = value),
       child: Row(
         children: [
           Container(
@@ -451,7 +497,7 @@ class _SearchViewState extends State<_SearchView> {
               child: Container(
                 width: 10,
                 height: 10,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: mainGreen,
                 ),
@@ -498,10 +544,12 @@ class _SearchViewState extends State<_SearchView> {
         ),
         const SizedBox(height: 14),
         ...state.results.map((transaction) {
-          final bool income = transaction.type == 'income';
+          final bool income =
+              transaction.type.toLowerCase() == 'income';
 
           final String time =
-              '${transaction.date.hour.toString().padLeft(2, '0')}:${transaction.date.minute.toString().padLeft(2, '0')}';
+              '${transaction.date.hour.toString().padLeft(2, '0')}:'
+              '${transaction.date.minute.toString().padLeft(2, '0')}';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -546,7 +594,8 @@ class _SearchViewState extends State<_SearchView> {
                         ),
                       ),
                       Text(
-                        '$time - ${_monthName(transaction.date.month)} ${transaction.date.day}',
+                        '$time - ${_monthName(transaction.date.month)} '
+                            '${transaction.date.day}',
                         style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -556,6 +605,7 @@ class _SearchViewState extends State<_SearchView> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   income
                       ? '+\$${transaction.amount.toStringAsFixed(2)}'
@@ -609,6 +659,7 @@ class _SearchViewState extends State<_SearchView> {
       'DEC',
     ];
 
-    return '${date.day.toString().padLeft(2, '0')} / ${months[date.month - 1]} / ${date.year}';
+    return '${date.day.toString().padLeft(2, '0')} / '
+        '${months[date.month - 1]} / ${date.year}';
   }
 }

@@ -1,7 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../bloc/saving/saving_bloc.dart';
 import '../../bloc/saving/saving_event.dart';
 import '../../bloc/saving/saving_state.dart';
@@ -16,26 +18,44 @@ class SavingCategoryScreen extends StatefulWidget {
   });
 
   @override
-  State<SavingCategoryScreen> createState() => _SavingCategoryScreenState();
+  State<SavingCategoryScreen> createState() =>
+      _SavingCategoryScreenState();
 }
 
 class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
-  static const mainGreen = Color(0xFF00D09E);
-  static const lightGreen = Color(0xFFF1FFF3);
-  static const blue = Color(0xFF6DB6FE);
-  static const selectedBlue = Color(0xFF0068FF);
-  static const darkGreen = Color(0xFF052224);
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
       context.read<SavingsBloc>().add(
         LoadSavings(category: widget.categoryName),
       );
     });
   }
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get backgroundColor =>
+      isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  Color get surfaceColor =>
+      isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  Color get textColor =>
+      isDark ? AppColors.darkText : AppColors.darkGreen;
+
+  Color get secondaryTextColor =>
+      isDark ? AppColors.darkSecondaryText : AppColors.darkGreen;
+
+  Color get buttonColor =>
+      isDark ? AppColors.lightGreen : AppColors.primaryGreen;
+
+  Color get buttonTextColor =>
+      isDark ? AppColors.darkBackground : AppColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
@@ -43,14 +63,12 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
     final scale = (size.width / 375).clamp(0.85, 1.15);
 
     return Scaffold(
-      backgroundColor: mainGreen,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             SizedBox(height: 14 * scale),
-
-            // ================= APP BAR =================
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 25 * scale),
               child: Row(
@@ -59,7 +77,9 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                     onTap: () => Navigator.pop(context),
                     child: Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: isDark
+                          ? AppColors.darkText
+                          : AppColors.darkGreen,
                       size: 26 * scale,
                     ),
                   ),
@@ -70,7 +90,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 18 * scale,
                           fontWeight: FontWeight.w600,
-                          color: darkGreen,
+                          color: textColor,
                         ),
                       ),
                     ),
@@ -78,28 +98,27 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                   Container(
                     width: 32 * scale,
                     height: 32 * scale,
-                    decoration: const BoxDecoration(
-                      color: lightGreen,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkCard
+                          : AppColors.lightGreen,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.notifications_none,
-                      color: darkGreen,
+                      color: textColor,
                       size: 20 * scale,
                     ),
                   ),
                 ],
               ),
             ),
-
             SizedBox(height: 26 * scale),
-
-            // ================= BODY =================
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: lightGreen,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(50 * scale),
                     topRight: Radius.circular(50 * scale),
@@ -108,8 +127,22 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                 child: BlocBuilder<SavingsBloc, SavingsState>(
                   builder: (context, state) {
                     if (state.status == SavingsStatus.loading) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: mainGreen),
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: buttonColor,
+                        ),
+                      );
+                    }
+
+                    if (state.status == SavingsStatus.failure) {
+                      return Center(
+                        child: Text(
+                          state.errorMessage ?? 'Something went wrong',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12 * scale,
+                            color: textColor,
+                          ),
+                        ),
                       );
                     }
 
@@ -129,15 +162,16 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                     return Column(
                       children: [
                         SizedBox(height: 28 * scale),
-
-                        // ===== Goal / Amount saved + category card =====
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 35 * scale),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 35 * scale,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                                   children: [
                                     _smallLabel('Goal', scale),
                                     FittedBox(
@@ -147,7 +181,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                         style: GoogleFonts.poppins(
                                           fontSize: 24 * scale,
                                           fontWeight: FontWeight.w600,
-                                          color: darkGreen,
+                                          color: textColor,
                                         ),
                                       ),
                                     ),
@@ -160,7 +194,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                         style: GoogleFonts.poppins(
                                           fontSize: 24 * scale,
                                           fontWeight: FontWeight.w600,
-                                          color: mainGreen,
+                                          color: buttonColor,
                                         ),
                                       ),
                                     ),
@@ -172,7 +206,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                 width: 140 * scale,
                                 height: 140 * scale,
                                 decoration: BoxDecoration(
-                                  color: blue,
+                                  color: AppColors.blue,
                                   borderRadius:
                                   BorderRadius.circular(32 * scale),
                                 ),
@@ -191,17 +225,19 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                             child: CircularProgressIndicator(
                                               value: percentage / 100,
                                               strokeWidth: 3,
-                                              backgroundColor: Colors.white
-                                                  .withOpacity(0.7),
+                                              backgroundColor:
+                                              AppColors.white.withOpacity(
+                                                0.35,
+                                              ),
                                               valueColor:
-                                              const AlwaysStoppedAnimation(
-                                                selectedBlue,
+                                              AlwaysStoppedAnimation<Color>(
+                                                AppColors.strongBlue,
                                               ),
                                             ),
                                           ),
                                           Icon(
                                             _icon(widget.categoryName),
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             size: 42 * scale,
                                           ),
                                         ],
@@ -215,7 +251,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 12 * scale,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       ),
                                     ),
                                   ],
@@ -224,30 +260,25 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                             ],
                           ),
                         ),
-
                         SizedBox(height: 22 * scale),
-
-                        // ===== Progress bar =====
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 35 * scale),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 35 * scale,
+                          ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final totalWidth = constraints.maxWidth;
                               final height = 26 * scale;
-
-                              double fillWidth = totalWidth * percentage / 100;
-                              if (fillWidth < 52 * scale) {
-                                fillWidth = 52 * scale;
-                              }
-                              if (fillWidth > totalWidth) {
-                                fillWidth = totalWidth;
-                              }
+                              final fillWidth =
+                                  totalWidth * percentage / 100;
 
                               return Container(
                                 width: double.infinity,
                                 height: height,
                                 decoration: BoxDecoration(
-                                  color: mainGreen,
+                                  color: isDark
+                                      ? AppColors.darkCard
+                                      : AppColors.primaryGreen,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: ClipRRect(
@@ -255,27 +286,31 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                   child: Stack(
                                     children: [
                                       AnimatedContainer(
-                                        duration:
-                                        const Duration(milliseconds: 500),
+                                        duration: const Duration(
+                                          milliseconds: 500,
+                                        ),
                                         curve: Curves.easeOut,
                                         width: fillWidth,
                                         height: height,
-                                        padding:
-                                        EdgeInsets.only(left: 12 * scale),
+                                        padding: EdgeInsets.only(
+                                          left: 12 * scale,
+                                        ),
                                         alignment: Alignment.centerLeft,
                                         decoration: BoxDecoration(
-                                          color: darkGreen,
+                                          color: AppColors.darkGreen,
                                           borderRadius:
                                           BorderRadius.circular(20),
                                         ),
-                                        child: Text(
+                                        child: percentage > 0
+                                            ? Text(
                                           '${percentage.toStringAsFixed(0)}%',
                                           style: GoogleFonts.poppins(
                                             fontSize: 10 * scale,
                                             fontWeight: FontWeight.w500,
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                           ),
-                                        ),
+                                        )
+                                            : null,
                                       ),
                                       Positioned(
                                         right: 14 * scale,
@@ -287,7 +322,9 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                             style: GoogleFonts.poppins(
                                               fontSize: 10 * scale,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.white,
+                                              color: isDark
+                                                  ? AppColors.darkText
+                                                  : AppColors.darkGreen,
                                             ),
                                           ),
                                         ),
@@ -299,12 +336,11 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                             },
                           ),
                         ),
-
                         SizedBox(height: 10 * scale),
-
-                        // ===== Message =====
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 35 * scale),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 35 * scale,
+                          ),
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Row(
@@ -313,35 +349,31 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                 Icon(
                                   Icons.check_box_outlined,
                                   size: 14 * scale,
-                                  color: darkGreen,
+                                  color: secondaryTextColor,
                                 ),
                                 SizedBox(width: 6 * scale),
-                                Text(
-                                  '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11 * scale,
-                                    color: darkGreen,
+                                Flexible(
+                                  child: Text(
+                                    '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11 * scale,
+                                      color: secondaryTextColor,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-
                         SizedBox(height: 18 * scale),
-
-                        // ===== Savings list =====
                         Expanded(
                           child: ListView(
-                            padding:
-                            EdgeInsets.symmetric(horizontal: 35 * scale),
-                            children: [
-                              ..._buildSavings(state, scale),
-                            ],
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 35 * scale,
+                            ),
+                            children: _buildSavings(state, scale),
                           ),
                         ),
-
-                        // ===== Add Savings button =====
                         Padding(
                           padding: EdgeInsets.only(
                             top: 8 * scale,
@@ -367,8 +399,8 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: mainGreen,
-                                foregroundColor: darkGreen,
+                                backgroundColor: buttonColor,
+                                foregroundColor: buttonTextColor,
                                 elevation: 0,
                                 padding: EdgeInsets.zero,
                                 shape: RoundedRectangleBorder(
@@ -397,28 +429,26 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
     );
   }
 
-  // ================= SMALL LABEL (Goal / Amount Saved) =================
   Widget _smallLabel(String text, double scale) {
     return Row(
       children: [
         Icon(
           Icons.check_box_outlined,
           size: 12 * scale,
-          color: darkGreen,
+          color: secondaryTextColor,
         ),
         SizedBox(width: 4 * scale),
         Text(
           text,
           style: GoogleFonts.poppins(
             fontSize: 11 * scale,
-            color: darkGreen,
+            color: secondaryTextColor,
           ),
         ),
       ],
     );
   }
 
-  // ================= SAVINGS LIST (grouped by month) =================
   List<Widget> _buildSavings(SavingsState state, double scale) {
     if (state.savings.isEmpty) {
       return [
@@ -428,7 +458,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
             'No savings yet',
             style: GoogleFonts.poppins(
               fontSize: 12 * scale,
-              color: darkGreen,
+              color: textColor,
             ),
           ),
         ),
@@ -441,7 +471,8 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
     bool firstHeader = true;
 
     for (final saving in state.savings) {
-      if (lastMonth != saving.date.month || lastYear != saving.date.year) {
+      if (lastMonth != saving.date.month ||
+          lastYear != saving.date.year) {
         lastMonth = saving.date.month;
         lastYear = saving.date.year;
 
@@ -456,7 +487,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 12 * scale,
                       fontWeight: FontWeight.w500,
-                      color: darkGreen,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -465,13 +496,13 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                     width: 30 * scale,
                     height: 30 * scale,
                     decoration: BoxDecoration(
-                      color: mainGreen,
+                      color: AppColors.primaryGreen,
                       borderRadius: BorderRadius.circular(10 * scale),
                     ),
                     child: Icon(
                       Icons.calendar_month_outlined,
                       size: 17 * scale,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
               ],
@@ -491,12 +522,12 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                 width: 50 * scale,
                 height: 50 * scale,
                 decoration: BoxDecoration(
-                  color: blue,
+                  color: AppColors.blue,
                   borderRadius: BorderRadius.circular(15 * scale),
                 ),
                 child: Icon(
                   _icon(widget.categoryName),
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 28 * scale,
                 ),
               ),
@@ -512,7 +543,7 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 12.5 * scale,
                         fontWeight: FontWeight.w500,
-                        color: darkGreen,
+                        color: textColor,
                       ),
                     ),
                     Text(
@@ -520,18 +551,19 @@ class _SavingCategoryScreenState extends State<SavingCategoryScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 10 * scale,
                         fontWeight: FontWeight.w600,
-                        color: selectedBlue,
+                        color: AppColors.strongBlue,
                       ),
                     ),
                   ],
                 ),
               ),
+              SizedBox(width: 8 * scale),
               Text(
                 '\$${saving.amount.toStringAsFixed(2)}',
                 style: GoogleFonts.poppins(
                   fontSize: 12.5 * scale,
                   fontWeight: FontWeight.w500,
-                  color: darkGreen,
+                  color: textColor,
                 ),
               ),
             ],

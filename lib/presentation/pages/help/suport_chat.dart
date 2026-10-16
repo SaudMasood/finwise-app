@@ -1,9 +1,11 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../../../data/datasources/support_datasorce.dart';
 import '../../../data/repositories/help/support_repo_impl.dart';
 import '../../../domain/usecases/help/get_support.dart';
@@ -16,12 +18,10 @@ import '../notification/notification.dart';
 class SupportChatScreen extends StatelessWidget {
   final String chatId;
 
-  const SupportChatScreen({super.key, required this.chatId});
-
-  static const Color mainGreen = Color(0xFF00D09E);
-  static const Color lightGreen = Color(0xFFF1FFF3);
-  static const Color softGreen = Color(0xFFDDF5E2);
-  static const Color darkGreen = Color(0xFF063F3F);
+  const SupportChatScreen({
+    super.key,
+    required this.chatId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,15 +56,29 @@ class _SupportChatView extends StatefulWidget {
 }
 
 class _SupportChatViewState extends State<_SupportChatView> {
-  static const Color mainGreen = SupportChatScreen.mainGreen;
-  static const Color lightGreen = SupportChatScreen.lightGreen;
-  static const Color softGreen = SupportChatScreen.softGreen;
-  static const Color darkGreen = SupportChatScreen.darkGreen;
-
-  final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _messageController =
+  TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   bool _helpCenterSelected = false;
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get pageBackground =>
+      isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
+  Color get surface =>
+      isDark ? AppColors.darkSurface : AppColors.lightGreen;
+
+  Color get cardColor =>
+      isDark ? AppColors.darkCard : AppColors.softGreen;
+
+  Color get textColor =>
+      isDark ? AppColors.darkText : AppColors.darkGreen;
+
+  Color get secondaryText =>
+      isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
   @override
   void dispose() {
@@ -91,7 +105,6 @@ class _SupportChatViewState extends State<_SupportChatView> {
   String _formatTime(DateTime date) {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
-
     return '$hour:$minute';
   }
 
@@ -121,7 +134,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
         final bloc = context.read<SupportBloc>();
 
         return Scaffold(
-          backgroundColor: mainGreen,
+          backgroundColor: pageBackground,
           body: SafeArea(
             child: Column(
               children: [
@@ -130,9 +143,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-                    decoration: const BoxDecoration(
-                      color: lightGreen,
-                      borderRadius: BorderRadius.vertical(
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(45),
                       ),
                     ),
@@ -163,52 +176,52 @@ class _SupportChatViewState extends State<_SupportChatView> {
       height: 100,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.arrow_back,
+                color: isDark ? textColor : Colors.white,
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Online Support',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: darkGreen,
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Online Support',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? textColor : Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: surface,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationScreen(),
                     ),
-                  ),
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications_none,
+                  size: 20,
+                  color: textColor,
                 ),
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    size: 20,
-                    color: darkGreen,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -218,7 +231,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: softGreen,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -249,7 +262,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? mainGreen : Colors.transparent,
+            color: selected
+                ? AppColors.primaryGreen
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
           alignment: Alignment.center,
@@ -258,7 +273,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: darkGreen,
+              color: selected ? Colors.white : textColor,
             ),
           ),
         ),
@@ -268,14 +283,21 @@ class _SupportChatViewState extends State<_SupportChatView> {
 
   Widget _messages(SupportState state) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: mainGreen));
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primaryGreen,
+        ),
+      );
     }
 
     if (state.messages.isEmpty) {
       return Center(
         child: Text(
           'Welcome! How can I help you today?',
-          style: GoogleFonts.poppins(fontSize: 12, color: darkGreen),
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: textColor,
+          ),
         ),
       );
     }
@@ -286,14 +308,25 @@ class _SupportChatViewState extends State<_SupportChatView> {
       itemCount: state.messages.length,
       itemBuilder: (context, index) {
         final message = state.messages[index];
+        final isUser = message.isUser;
+
+        // Keep outgoing messages unchanged.
+        // Make received-message text white in dark mode.
+        final bubbleTextColor = isUser
+            ? Colors.white
+            : (isDark ? Colors.white : textColor);
+
+        final bubbleColor = isUser
+            ? AppColors.primaryGreen
+            : cardColor;
 
         return Align(
           alignment:
-          message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
-              crossAxisAlignment: message.isUser
+              crossAxisAlignment: isUser
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
@@ -306,7 +339,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: message.isUser ? mainGreen : softGreen,
+                    color: bubbleColor,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Text(
@@ -314,14 +347,17 @@ class _SupportChatViewState extends State<_SupportChatView> {
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       height: 1.4,
-                      color: darkGreen,
+                      color: bubbleTextColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   _formatTime(message.createdAt),
-                  style: GoogleFonts.poppins(fontSize: 8, color: darkGreen),
+                  style: GoogleFonts.poppins(
+                    fontSize: 8,
+                    color: secondaryText,
+                  ),
                 ),
               ],
             ),
@@ -331,17 +367,25 @@ class _SupportChatViewState extends State<_SupportChatView> {
     );
   }
 
-  Widget _iconBox({required IconData icon, required VoidCallback? onTap}) {
+
+  Widget _iconBox({
+    required IconData icon,
+    required VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 28,
-        height: 28,
+        width: 30,
+        height: 30,
         decoration: BoxDecoration(
-          color: lightGreen,
+          color: surface,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: darkGreen),
+        child: Icon(
+          icon,
+          size: 17,
+          color: textColor,
+        ),
       ),
     );
   }
@@ -350,36 +394,41 @@ class _SupportChatViewState extends State<_SupportChatView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: mainGreen,
+        color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           _iconBox(
             icon: Icons.camera_alt_outlined,
-            onTap: () => _showMessage('Attachment support is not configured yet.'),
+            onTap: () => _showMessage(
+              'Attachment support is not configured yet.',
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: SizedBox(
-              height: 32,
+              height: 38,
               child: TextField(
                 controller: _messageController,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(bloc),
-                style: GoogleFonts.poppins(fontSize: 11, color: darkGreen),
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: AppColors.darkGreen,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Write Here...',
                   hintStyle: GoogleFonts.poppins(
-                    fontSize: 9,
-                    color: Colors.grey.shade600,
+                    fontSize: 10,
+                    color: AppColors.lightSecondaryText,
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.softGreen,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 8,
+                    vertical: 9,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -392,7 +441,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
           const SizedBox(width: 8),
           _iconBox(
             icon: Icons.mic_none,
-            onTap: () => _showMessage('Voice messages are not configured yet.'),
+            onTap: () => _showMessage(
+              'Voice messages are not configured yet.',
+            ),
           ),
           const SizedBox(width: 6),
           _iconBox(
@@ -436,18 +487,21 @@ class _SupportChatViewState extends State<_SupportChatView> {
           style: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: darkGreen,
+            color: textColor,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Select a topic to read a quick answer.',
-          style: GoogleFonts.poppins(fontSize: 11, color: darkGreen),
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            color: secondaryText,
+          ),
         ),
         const SizedBox(height: 12),
         for (final item in helpItems)
           Card(
-            color: softGreen,
+            color: cardColor,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -455,12 +509,14 @@ class _SupportChatViewState extends State<_SupportChatView> {
             child: ExpansionTile(
               shape: const Border(),
               collapsedShape: const Border(),
+              iconColor: textColor,
+              collapsedIconColor: textColor,
               title: Text(
                 item.$1,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: darkGreen,
+                  color: textColor,
                 ),
               ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -470,7 +526,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     height: 1.5,
-                    color: darkGreen,
+                    color: secondaryText,
                   ),
                 ),
               ],

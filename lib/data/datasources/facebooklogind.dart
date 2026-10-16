@@ -1,3 +1,4 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
@@ -13,21 +14,26 @@ class FacebookLoginDataSource {
     await FacebookAuth.instance.login();
 
     if (result.status != LoginStatus.success) {
-      throw Exception('Facebook login cancelled');
+      if (result.status == LoginStatus.cancelled) {
+        throw Exception('Facebook login was cancelled.');
+      }
+
+      throw Exception(
+        result.message ?? 'Facebook login failed.',
+      );
     }
 
     final accessToken = result.accessToken;
 
     if (accessToken == null) {
-      throw Exception('Facebook access token not found');
+      throw Exception('Facebook access token not found.');
     }
 
-    final credential = FacebookAuthProvider.credential(
+    final OAuthCredential credential =
+    FacebookAuthProvider.credential(
       accessToken.tokenString,
     );
 
-    return await firebaseAuth.signInWithCredential(
-      credential,
-    );
+    return firebaseAuth.signInWithCredential(credential);
   }
 }

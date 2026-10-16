@@ -1,9 +1,10 @@
+
 import 'package:finwise/presentation/pages/onboarding/onboarding.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../auth/login_page.dart';
+import '../../../core/color/app_color.dart';
 
 class LaunchScreen extends StatelessWidget {
   const LaunchScreen({super.key});
@@ -12,11 +13,29 @@ class LaunchScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final width = size.width;
-
     final scale = width / 430;
 
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final backgroundColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightGreen;
+
+    final descriptionColor = isDark
+        ? AppColors.darkSecondaryText
+        : AppColors.black;
+
+    final subtitleColor = isDark
+        ? AppColors.darkText
+        : AppColors.darkGreen;
+
+    final secondaryButtonColor = isDark
+        ? AppColors.darkCard
+        : AppColors.softGreen;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1FFF3),
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Center(
           child: Transform.translate(
@@ -40,7 +59,7 @@ class LaunchScreen extends StatelessWidget {
                     fontSize: 52.14 * scale,
                     fontWeight: FontWeight.w600,
                     height: 1.0,
-                    color: const Color(0xFF05C9A5),
+                    color: AppColors.primaryGreen,
                   ),
                 ),
 
@@ -54,12 +73,13 @@ class LaunchScreen extends StatelessWidget {
                     fontSize: 9 * scale,
                     fontWeight: FontWeight.w400,
                     height: 1.15,
-                    color: Colors.black,
+                    color: descriptionColor,
                   ),
                 ),
 
                 SizedBox(height: 30 * scale),
 
+                // Log In button
                 SizedBox(
                   width: 207 * scale,
                   height: 46 * scale,
@@ -67,18 +87,21 @@ class LaunchScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen(),
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                          const OnboardingScreen(),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF05C9A5),
-                      foregroundColor: const Color(0xFF063F3F),
+                      backgroundColor:
+                      AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
                       elevation: 0,
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25 * scale),
+                        borderRadius:
+                        BorderRadius.circular(25 * scale),
                       ),
                     ),
                     child: Text(
@@ -94,18 +117,27 @@ class LaunchScreen extends StatelessWidget {
 
                 SizedBox(height: 10 * scale),
 
+                // Sign Up button
                 SizedBox(
                   width: 207 * scale,
                   height: 46 * scale,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Connect your signup screen here.
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFDDF5E2),
-                      foregroundColor: const Color(0xFF063F3F),
+                      backgroundColor: secondaryButtonColor,
+                      foregroundColor: subtitleColor,
                       elevation: 0,
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25 * scale),
+                        borderRadius:
+                        BorderRadius.circular(25 * scale),
+                        side: isDark
+                            ? BorderSide(
+                          color: AppColors.darkDivider,
+                        )
+                            : BorderSide.none,
                       ),
                     ),
                     child: Text(
@@ -121,13 +153,19 @@ class LaunchScreen extends StatelessWidget {
 
                 SizedBox(height: 10 * scale),
 
-                Text(
-                  'Forgot Password?',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12 * scale,
-                    fontWeight: FontWeight.bold,
-                    height: 1.0,
-                    color: const Color(0xFF063F3F),
+                // Forgot Password
+                GestureDetector(
+                  onTap: () {
+                    // Connect your forgot-password screen here.
+                  },
+                  child: Text(
+                    'Forgot Password?',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12 * scale,
+                      fontWeight: FontWeight.bold,
+                      height: 1.0,
+                      color: subtitleColor,
+                    ),
                   ),
                 ),
               ],

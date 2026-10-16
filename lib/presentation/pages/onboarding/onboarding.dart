@@ -1,23 +1,35 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/color/app_color.dart';
 import '../auth/login_page.dart';
 
-const green = Color(0xFF00D09E);
-const lightGreen = Color(0xFFF1FFF3);
+const green = AppColors.primaryGreen;
+const lightGreen = AppColors.lightGreen;
 const dark = Color(0xFF052224);
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() =>
-      _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState
-    extends State<OnboardingScreen> {
+class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentPage = 0;
+
+  bool get isDark =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color get backgroundColor =>
+      isDark ? AppColors.darkBackground : green;
+
+  Color get surfaceColor =>
+      isDark ? AppColors.darkSurface : lightGreen;
+
+  Color get textColor =>
+      isDark ? AppColors.darkText : dark;
 
   void nextPage() {
     if (currentPage == 0) {
@@ -34,13 +46,33 @@ class _OnboardingScreenState
     }
   }
 
+  Widget _pageIndicator(int page) {
+    final isActive = currentPage == page;
+
+    return Container(
+      width: 7,
+      height: 7,
+      decoration: BoxDecoration(
+        color: isActive
+            ? green
+            : Colors.transparent,
+        border: isActive
+            ? null
+            : Border.all(
+          color: textColor,
+          width: 1,
+        ),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final height =
-        MediaQuery.of(context).size.height;
+    final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: green,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -55,27 +87,24 @@ class _OnboardingScreenState
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: dark,
+                    color: isDark ? AppColors.darkText : AppColors.white,
                     height: 1.3,
                   ),
                 ),
               ),
             ),
-
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: lightGreen,
-                  borderRadius:
-                  BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(50),
                   ),
                 ),
                 child: Column(
                   children: [
                     const SizedBox(height: 30),
-
                     SizedBox(
                       width: 287,
                       height: 287,
@@ -87,8 +116,13 @@ class _OnboardingScreenState
                             width: 190,
                             height: 190,
                             fit: BoxFit.contain,
+                            color: isDark
+                                ? AppColors.darkCard
+                                : null,
+                            colorBlendMode: isDark
+                                ? BlendMode.modulate
+                                : null,
                           ),
-
                           Image.asset(
                             currentPage == 0
                                 ? 'assets/icons/on1.png'
@@ -100,9 +134,7 @@ class _OnboardingScreenState
                         ],
                       ),
                     ),
-
                     const Spacer(),
-
                     GestureDetector(
                       onTap: nextPage,
                       child: Text(
@@ -110,55 +142,19 @@ class _OnboardingScreenState
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: dark,
+                          color: textColor,
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: currentPage == 0
-                                ? green
-                                : Colors.transparent,
-                            border: currentPage == 0
-                                ? null
-                                : Border.all(
-                              color: dark,
-                              width: 1,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-
+                        _pageIndicator(0),
                         const SizedBox(width: 8),
-
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: currentPage == 1
-                                ? green
-                                : Colors.transparent,
-                            border: currentPage == 1
-                                ? null
-                                : Border.all(
-                              color: dark,
-                              width: 1,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
+                        _pageIndicator(1),
                       ],
                     ),
-
                     const SizedBox(height: 50),
                   ],
                 ),
