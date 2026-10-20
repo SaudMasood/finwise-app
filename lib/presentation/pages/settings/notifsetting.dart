@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,70 +31,83 @@ class NotificationSettingsScreen extends StatelessWidget {
         FontWeight weight = FontWeight.w400,
         Color? color,
       }) {
-    final isDark = _isDark(context);
-
     return GoogleFonts.poppins(
       fontSize: size,
       fontWeight: weight,
       color: color ??
-          (isDark ? AppColors.darkText : AppColors.darkGreen),
+          (_isDark(context)
+              ? AppColors.darkText
+              : AppColors.darkGreen),
     );
   }
 
+  // App bar: same as Settings screen.
   Widget _header(BuildContext context) {
     final isDark = _isDark(context);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 24, 22),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.maybePop(context),
-            icon: Icon(
-              Icons.arrow_back,
-              color: isDark ? AppColors.darkText : AppColors.white,
-              size: 24,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Notification Settings',
-                textAlign: TextAlign.center,
-                style: _text(
-                  context,
-                  17,
-                  weight: FontWeight.w600,
-                  color: isDark ? AppColors.darkText : AppColors.white,
+    return SizedBox(
+      height: 72,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: Row(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.maybePop(context),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? AppColors.darkText : AppColors.white,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
-          ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : AppColors.lightGreen,
-              shape: BoxShape.circle,
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Notification Settings',
+                  textAlign: TextAlign.center,
+                  style: _text(
+                    context,
+                    16,
+                    weight: FontWeight.w600,
+                    color:
+                    isDark ? AppColors.darkText : AppColors.darkGreen,
+                  ),
+                ),
+              ),
             ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => const NotificationScreen(),
                   ),
                 );
               },
-              icon: Icon(
-                Icons.notifications_none_rounded,
-                color: isDark ? AppColors.darkText : AppColors.darkGreen,
-                size: 22,
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightGreen,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: isDark ? AppColors.darkText : AppColors.darkGreen,
+                  size: 16,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -125,7 +137,9 @@ class NotificationSettingsScreen extends StatelessWidget {
                 11.5,
                 weight: FontWeight.w500,
                 color: enabled
-                    ? (isDark ? AppColors.darkText : AppColors.darkGreen)
+                    ? (isDark
+                    ? AppColors.darkText
+                    : AppColors.darkGreen)
                     : (isDark
                     ? AppColors.darkSecondaryText
                     : AppColors.darkGreen.withValues(alpha: 0.5)),
@@ -146,7 +160,8 @@ class NotificationSettingsScreen extends StatelessWidget {
               scale: 0.85,
               child: Switch(
                 value: value,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                materialTapTargetSize:
+                MaterialTapTargetSize.shrinkWrap,
                 thumbColor: WidgetStateProperty.resolveWith((states) {
                   return states.contains(WidgetState.selected)
                       ? AppColors.white
@@ -185,8 +200,6 @@ class NotificationSettingsScreen extends StatelessWidget {
       BuildContext context,
       NotificationSettingsState state,
       ) {
-    final isDark = _isDark(context);
-
     if (state.status == NotificationSettingsStatus.loading ||
         state.status == NotificationSettingsStatus.initial) {
       return const Center(
@@ -212,9 +225,9 @@ class NotificationSettingsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
-                  context
-                      .read<NotificationSettingsBloc>()
-                      .add(const LoadNotificationSettings());
+                  context.read<NotificationSettingsBloc>().add(
+                    const LoadNotificationSettings(),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
@@ -228,8 +241,7 @@ class NotificationSettingsScreen extends StatelessWidget {
       );
     }
 
-    final masterEnabled =
-        state.settings['generalNotification'] == true;
+    final masterEnabled = state.settings['generalNotification'] ?? true;
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -279,22 +291,20 @@ class NotificationSettingsScreen extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkSurface
-                      : AppColors.lightGreen,
+                  color:
+                  isDark ? AppColors.darkSurface : AppColors.lightGreen,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(50),
+                    top: Radius.circular(55),
                   ),
                 ),
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(50),
+                    top: Radius.circular(55),
                   ),
                   child: BlocConsumer<NotificationSettingsBloc,
                       NotificationSettingsState>(
                     listener: (context, state) {
-                      if (state.errorMessage != null &&
-                          state.settings.isNotEmpty) {
+                      if (state.errorMessage != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(state.errorMessage!),

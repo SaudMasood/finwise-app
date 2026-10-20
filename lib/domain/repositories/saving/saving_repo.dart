@@ -1,4 +1,3 @@
-
 import '../../entities/saving/saving.dart';
 
 abstract class SavingsRepository {
@@ -6,18 +5,12 @@ abstract class SavingsRepository {
 
   Future<void> addSavingCategory({
     required String name,
-    double goal,
+    double goal = 0,
   });
 
-  Stream<List<SavingEntity>> watchSavings(
-      String category,
-      );
+  Future<double> getGoal(String category);
 
-  Future<double> getGoal(
-      String category,
-      );
+  Stream<List<SavingEntity>> watchSavings(String category);
 
-  Future<void> addSaving(
-      SavingEntity saving,
-      );
+  Future<void> addSaving(SavingEntity saving);
 }

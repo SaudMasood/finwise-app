@@ -14,88 +14,56 @@ class CategoryDataSource {
 
   String get uid {
     final user = firebaseAuth.currentUser;
-
     if (user == null) {
       throw Exception('User is not logged in');
     }
-
     return user.uid;
   }
 
   CollectionReference<Map<String, dynamic>>
-  get categoriesCollection {
-    return firestore
-        .collection('users')
-        .doc(uid)
-        .collection('categories');
-  }
+  get categoriesCollection =>
+      firestore.collection('users').doc(uid).collection('categories');
 
   CollectionReference<Map<String, dynamic>>
-  get transactionsCollection {
-    return firestore
-        .collection('users')
-        .doc(uid)
-        .collection('transactions');
-  }
+  get transactionsCollection =>
+      firestore.collection('users').doc(uid).collection('transactions');
 
   Stream<List<String>> watchCategories() {
-    return categoriesCollection.snapshots().map(
-          (snapshot) {
-        final categories = snapshot.docs
-            .map(
-              (doc) =>
-          doc.data()['name']?.toString().trim() ?? '',
-        )
-            .where(
-              (name) => name.isNotEmpty,
-        )
-            .toSet()
-            .toList();
+    return categoriesCollection.snapshots().map((snapshot) {
+      final categories = snapshot.docs
+          .map((doc) => doc.data()['name']?.toString().trim() ?? '')
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList();
 
-        categories.sort(
-              (a, b) => a.toLowerCase().compareTo(
-            b.toLowerCase(),
-          ),
-        );
-
-        return categories;
-      },
-    );
+      categories.sort(
+            (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
+      );
+      return categories;
+    });
   }
 
   Stream<List<ExpenseModel>> watchTransactions({
     String? category,
   }) {
-    Query<Map<String, dynamic>> query =
-        transactionsCollection;
+    Query<Map<String, dynamic>> query = transactionsCollection;
 
-    if (category != null && category.trim().isNotEmpty) {
-      query = query.where(
-        'category',
-        isEqualTo: category.trim(),
-      );
+    final selectedCategory = category?.trim();
+    if (selectedCategory != null && selectedCategory.isNotEmpty) {
+      query = query.where('category', isEqualTo: selectedCategory);
     }
 
-    return query.snapshots().map(
-          (snapshot) {
-        final transactions = snapshot.docs
-            .map(
-              (doc) => ExpenseModel.fromFirestore(doc),
-        )
-            .toList();
+    return query.snapshots().map((snapshot) {
+      final transactions = snapshot.docs
+          .map((doc) => ExpenseModel.fromFirestore(doc))
+          .toList();
 
-        transactions.sort(
-              (a, b) => b.date.compareTo(a.date),
-        );
-
-        return transactions;
-      },
-    );
+      transactions.sort((a, b) => b.date.compareTo(a.date));
+      return transactions;
+    });
   }
 
-  Future<void> addCategory({
-    required String category,
-  }) async {
+  Future<void> addCategory({required String category}) async {
     final name = category.trim();
 
     if (name.isEmpty) {
@@ -103,17 +71,12 @@ class CategoryDataSource {
     }
 
     final existing = await categoriesCollection
-        .where(
-      'name',
-      isEqualTo: name,
-    )
+        .where('name', isEqualTo: name)
         .limit(1)
         .get();
 
     if (existing.docs.isNotEmpty) {
-      throw Exception(
-        'Category "$name" already exists',
-      );
+      throw Exception('Category "$name" already exists');
     }
 
     await categoriesCollection.add({
@@ -122,19 +85,11 @@ class CategoryDataSource {
     });
   }
 
-  Future<void> addExpense({
-    required ExpenseModel expense,
-  }) async {
-    await transactionsCollection.add(
-      expense.toFirestore(),
-    );
+  Future<void> addExpense({required ExpenseModel expense}) async {
+    await transactionsCollection.add(expense.toFirestore());
   }
 
-  Future<void> addIncome({
-    required ExpenseModel income,
-  }) async {
-    await transactionsCollection.add(
-      income.toFirestore(),
-    );
+  Future<void> addIncome({required ExpenseModel income}) async {
+    await transactionsCollection.add(income.toFirestore());
   }
 }

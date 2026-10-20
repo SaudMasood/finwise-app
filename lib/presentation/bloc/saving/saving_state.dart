@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 
 import '../../../domain/entities/saving/saving.dart';
 
-
 enum SavingsStatus {
   initial,
   loading,
@@ -37,19 +36,18 @@ class SavingsState extends Equatable {
     String? errorMessage,
     bool? savingSuccess,
     bool? categoryAdded,
+    bool clearErrorMessage = false,
   }) {
     return SavingsState(
       status: status ?? this.status,
-      savingCategories:
-      savingCategories ?? this.savingCategories,
+      savingCategories: savingCategories ?? this.savingCategories,
       savings: savings ?? this.savings,
       goal: goal ?? this.goal,
-      errorMessage:
-      errorMessage ?? this.errorMessage,
-      savingSuccess:
-      savingSuccess ?? this.savingSuccess,
-      categoryAdded:
-      categoryAdded ?? this.categoryAdded,
+      errorMessage: clearErrorMessage
+          ? null
+          : errorMessage ?? this.errorMessage,
+      savingSuccess: savingSuccess ?? this.savingSuccess,
+      categoryAdded: categoryAdded ?? this.categoryAdded,
     );
   }
 

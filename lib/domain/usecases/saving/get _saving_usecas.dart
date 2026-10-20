@@ -5,13 +5,9 @@ import '../../repositories/saving/saving_repo.dart';
 class GetSavingsUseCase {
   final SavingsRepository repository;
 
-  GetSavingsUseCase({
-    required this.repository,
-  });
+  GetSavingsUseCase(this.repository);
 
-  Stream<List<SavingEntity>> call(
-      String category,
-      ) {
+  Stream<List<SavingEntity>> call(String category) {
     return repository.watchSavings(category);
   }
 }

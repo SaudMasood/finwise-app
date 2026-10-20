@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/saving/saving.dart';
 
+
 class SavingsDataSource {
   final FirebaseFirestore firestore;
   final FirebaseAuth firebaseAuth;
@@ -12,173 +13,206 @@ class SavingsDataSource {
     required this.firebaseAuth,
   });
 
-  String get uid {
+  static const List<String> defaultCategories = [
+    'Travel',
+    'New House',
+    'Car',
+    'Wedding',
+    'Emergency Fund',
+  ];
+
+  String get _userId {
     final user = firebaseAuth.currentUser;
-
     if (user == null) {
-      throw Exception('User is not logged in');
+      throw StateError('Please sign in before using Savings.');
     }
-
     return user.uid;
   }
 
-  CollectionReference<Map<String, dynamic>>
-  get savingsCollection {
-    return firestore
-        .collection('users')
-        .doc(uid)
-        .collection('savings');
-  }
+  DocumentReference<Map<String, dynamic>> get _userDocument =>
+      firestore.collection('users').doc(_userId);
 
   CollectionReference<Map<String, dynamic>>
-  get savingCategoriesCollection {
-    return firestore
-        .collection('users')
-        .doc(uid)
-        .collection('saving_categories');
+  get _categoriesCollection =>
+      _userDocument.collection('saving_categories');
+
+  String _categoryId(String name) {
+    return name
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
   }
 
-  Future<void> ensureDefaultSavingCategories() async {
-    final snapshot =
-    await savingCategoriesCollection.get();
-
-    if (snapshot.docs.isNotEmpty) {
-      return;
+  /// Creates the user profile if necessary and adds any missing
+  /// default categories. Existing category goals are never overwritten.
+  Future<void> initializeSavings() async {
+    final user = firebaseAuth.currentUser;
+    if (user == null) {
+      throw StateError('Please sign in before using Savings.');
     }
 
-    final defaults = [
-      {
-        'name': 'Travel',
-        'goal': 1962.93,
-      },
-      {
-        'name': 'New House',
-        'goal': 569200.00,
-      },
-      {
-        'name': 'Car',
-        'goal': 14390.00,
-      },
-      {
-        'name': 'Wedding',
-        'goal': 34700.00,
-      },
-    ];
+    final userRef = _userDocument;
+    final userSnapshot = await userRef.get();
+
+    if (!userSnapshot.exists) {
+      await userRef.set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
 
     final batch = firestore.batch();
 
-    for (final item in defaults) {
-      final ref =
-      savingCategoriesCollection.doc();
+    for (final categoryName in defaultCategories) {
+      final categoryRef =
+      _categoriesCollection.doc(_categoryId(categoryName));
+      final snapshot = await categoryRef.get();
 
-      batch.set(ref, {
-        'name': item['name'],
-        'goal': item['goal'],
-        'createdAt':
-        FieldValue.serverTimestamp(),
-      });
+      if (!snapshot.exists) {
+        batch.set(categoryRef, {
+          'name': categoryName,
+          'goal': 0.0,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'isDefault': true,
+        });
+      }
     }
 
     await batch.commit();
   }
 
-  Stream<List<String>> watchSavingCategories() async* {
-    await ensureDefaultSavingCategories();
-
-    yield* savingCategoriesCollection
-        .orderBy('createdAt')
-        .snapshots()
-        .map(
-          (snapshot) {
-        return snapshot.docs
-            .map(
-              (doc) =>
-          doc.data()['name']?.toString() ??
-              '',
-        )
-            .where(
-              (name) => name.isNotEmpty,
-        )
-            .toList();
-      },
+  /// Emits category names from this user's Firestore documents.
+  /// Initialization happens before the live category stream starts.
+  Stream<List<String>> watchSavingCategories() {
+    return Stream<void>.fromFuture(initializeSavings()).asyncExpand(
+          (_) => _categoriesCollection
+          .orderBy('createdAt')
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+            .map((doc) {
+          final data = doc.data();
+          return (data['name'] as String?) ?? doc.id;
+        })
+            .toList(),
+      ),
     );
   }
 
+  /// Creates a new category with its own goal.
   Future<void> addSavingCategory({
     required String name,
     double goal = 0,
   }) async {
-    await savingCategoriesCollection.add({
-      'name': name,
+    final cleanName = name.trim();
+
+    if (cleanName.isEmpty) {
+      throw ArgumentError('Category name cannot be empty.');
+    }
+    if (!goal.isFinite || goal < 0) {
+      throw ArgumentError('Goal must be a valid non-negative amount.');
+    }
+
+    await initializeSavings();
+
+    final categoryId = _categoryId(cleanName);
+    if (categoryId.isEmpty) {
+      throw ArgumentError('Please enter a valid category name.');
+    }
+
+    final categoryRef = _categoriesCollection.doc(categoryId);
+    final existing = await categoryRef.get();
+
+    if (existing.exists) {
+      throw StateError('This saving category already exists.');
+    }
+
+    await categoryRef.set({
+      'name': cleanName,
       'goal': goal,
-      'createdAt':
-      FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'isDefault': false,
     });
   }
 
-  Future<double> getGoal(
-      String category,
-      ) async {
+  /// Returns the saved goal for a category.
+  Future<double> getGoal(String category) async {
+    await initializeSavings();
+
     final snapshot =
-    await savingCategoriesCollection
-        .where(
-      'name',
-      isEqualTo: category,
-    )
-        .limit(1)
-        .get();
+    await _categoriesCollection.doc(_categoryId(category)).get();
 
-    if (snapshot.docs.isEmpty) {
-      return 0;
-    }
+    if (!snapshot.exists) return 0.0;
 
-    final value =
-    snapshot.docs.first.data()['goal'];
+    final value = snapshot.data()?['goal'];
+    if (value is num) return value.toDouble();
 
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    if (value is String) {
-      return double.tryParse(value) ?? 0;
-    }
-
-    return 0;
+    return 0.0;
   }
 
-  Stream<List<SavingModel>> watchSavings(
-      String category,
-      ) {
-    return savingsCollection
-        .where(
-      'category',
-      isEqualTo: category,
-    )
+  /// Emits goal updates when the category document changes.
+  Stream<double> watchGoal(String category) {
+    return _categoriesCollection
+        .doc(_categoryId(category))
         .snapshots()
-        .map(
-          (snapshot) {
-        final savings = snapshot.docs
-            .map(
-              (doc) =>
-              SavingModel.fromFirestore(doc),
-        )
-            .toList();
-
-        savings.sort(
-              (a, b) =>
-              b.date.compareTo(a.date),
-        );
-
-        return savings;
-      },
-    );
+        .map((snapshot) {
+      final value = snapshot.data()?['goal'];
+      return value is num ? value.toDouble() : 0.0;
+    });
   }
 
-  Future<void> addSaving(
-      SavingModel saving,
-      ) async {
-    await savingsCollection.add(
-      saving.toFirestore(),
-    );
+  /// Reads only transactions belonging to the selected category.
+  Stream<List<SavingModel>> watchSavings(String category) {
+    final categoryId = _categoryId(category);
+
+    return _categoriesCollection
+        .doc(categoryId)
+        .collection('savings')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return SavingModel.fromFirestore(
+          doc,
+          category: category,
+        );
+      }).toList();
+    });
+  }
+
+  /// Adds a transaction inside its category's nested savings collection.
+  Future<void> addSaving(SavingModel saving) async {
+    await initializeSavings();
+
+    final categoryName = saving.category.trim();
+    if (categoryName.isEmpty) {
+      throw ArgumentError('Select a saving category.');
+    }
+    if (!saving.amount.isFinite || saving.amount <= 0) {
+      throw ArgumentError('Amount must be greater than zero.');
+    }
+
+    final categoryRef =
+    _categoriesCollection.doc(_categoryId(categoryName));
+    final categorySnapshot = await categoryRef.get();
+
+    if (!categorySnapshot.exists) {
+      throw StateError(
+        'The category "$categoryName" does not exist. '
+            'Please create it first.',
+      );
+    }
+
+    final transactionData = saving.toFirestore()
+      ..['category'] = categoryName
+      ..['createdAt'] = FieldValue.serverTimestamp();
+
+    await categoryRef.collection('savings').add(transactionData);
   }
 }

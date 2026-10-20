@@ -29,6 +29,10 @@ class SettingsScreen extends StatelessWidget {
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
+  // ---------------------------------------------------------------------------
+  // Navigation / logic (unchanged)
+  // ---------------------------------------------------------------------------
+
   void _openPasswordSettings(BuildContext context) {
     final dataSource = PasswordRemoteDataSource();
 
@@ -42,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => BlocProvider(
           create: (_) => PasswordBloc(
             changePasswordUseCase: useCase,
@@ -56,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
   void _openNotifications(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => const NotificationScreen(),
       ),
     );
@@ -72,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => BlocProvider<NotificationSettingsBloc>(
           create: (_) => NotificationSettingsBloc(
             repository: repository,
@@ -98,7 +102,7 @@ class SettingsScreen extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => BlocProvider(
           create: (_) => DeleteAccountBloc(
             deleteAccountUseCase: useCase,
@@ -109,7 +113,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  /// Figma tile: small filled teal circle with dark icon, title, dark chevron.
+  // ---------------------------------------------------------------------------
+  // UI (matched to Figma)
+  // ---------------------------------------------------------------------------
+
   Widget _buildSettingsTile({
     required BuildContext context,
     required IconData icon,
@@ -122,26 +129,25 @@ class SettingsScreen extends StatelessWidget {
     final circleColor =
     isDestructive ? AppColors.error : AppColors.primaryGreen;
 
-    final iconColor = isDark ? AppColors.darkBackground : AppColors.darkGreen;
+    final iconColor =
+    isDark ? AppColors.darkBackground : AppColors.darkGreen;
 
     final textColor = isDestructive
         ? AppColors.error
         : (isDark ? AppColors.darkText : AppColors.darkGreen);
 
-    final chevronColor = isDestructive
-        ? AppColors.error
-        : (isDark ? AppColors.darkText : AppColors.darkGreen);
+    final chevronColor = textColor;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SizedBox(
+        height: 40,
         child: Row(
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: 26,
+              height: 26,
               decoration: BoxDecoration(
                 color: circleColor,
                 shape: BoxShape.circle,
@@ -152,21 +158,82 @@ class SettingsScreen extends StatelessWidget {
                 size: 15,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 18),
             Expanded(
               child: Text(
                 title,
                 style: GoogleFonts.poppins(
-                  fontSize: 12,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: textColor,
                 ),
               ),
             ),
             Icon(
-              Icons.chevron_right_rounded,
+              Icons.arrow_forward_ios_rounded,
               color: chevronColor,
-              size: 22,
+              size: 13,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    final headerTextColor =
+    isDark ? AppColors.darkText : AppColors.darkGreen;
+
+    return SizedBox(
+      height: 72,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: Row(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.maybePop(context),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? AppColors.darkText : AppColors.white,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Settings',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: headerTextColor,
+                  ),
+                ),
+              ),
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _openNotifications(context),
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightGreen,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: isDark ? AppColors.darkText : AppColors.darkGreen,
+                  size: 16,
+                ),
+              ),
             ),
           ],
         ),
@@ -183,86 +250,25 @@ class SettingsScreen extends StatelessWidget {
     final surface =
     isDark ? AppColors.darkSurface : AppColors.lightGreen;
 
-    final headerTextColor =
-    isDark ? AppColors.darkText : AppColors.darkGreen;
-
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            SizedBox(
-              height: 88,
-              child: Row(
-                children: [
-                  const SizedBox(width: 12),
-                  IconButton(
-                    onPressed: () => Navigator.maybePop(context),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: isDark
-                          ? AppColors.darkText
-                          : AppColors.white,
-                      size: 23,
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Settings',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: headerTextColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkCard
-                            : AppColors.lightGreen,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        tooltip: 'Notifications',
-                        onPressed: () => _openNotifications(context),
-                        icon: Icon(
-                          Icons.notifications_none,
-                          color: isDark
-                              ? AppColors.darkText
-                              : AppColors.darkGreen,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(context, isDark),
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: surface,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(45),
-                    topRight: Radius.circular(45),
+                    topLeft: Radius.circular(55),
+                    topRight: Radius.circular(55),
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(
-                    26,
-                    42,
-                    26,
-                    30,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(31, 50, 31, 30),
                   child: Column(
                     children: [
                       _buildSettingsTile(
@@ -271,14 +277,12 @@ class SettingsScreen extends StatelessWidget {
                         title: 'Notification Settings',
                         onTap: () => _openNotificationSettings(context),
                       ),
-                      const SizedBox(height: 6),
                       _buildSettingsTile(
                         context: context,
                         icon: Icons.vpn_key_outlined,
                         title: 'Password Settings',
                         onTap: () => _openPasswordSettings(context),
                       ),
-                      const SizedBox(height: 6),
                       _buildSettingsTile(
                         context: context,
                         icon: Icons.person_outline_rounded,

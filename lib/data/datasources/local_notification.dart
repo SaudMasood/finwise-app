@@ -1,11 +1,13 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+import '../../core/prefrences/app_prefrences.dart';
 
 class LocalNotificationService {
   LocalNotificationService({
@@ -24,8 +26,6 @@ class LocalNotificationService {
   final FlutterLocalNotificationsPlugin notifications;
 
   bool _initialized = false;
-
-  static const String _settingsPrefix = 'finwise_notification_';
 
   static const Map<String, bool> defaultSettings = {
     'generalNotification': true,
@@ -51,6 +51,8 @@ class LocalNotificationService {
         .collection('notifications');
   }
 
+  // INITIALIZATION
+
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -64,11 +66,13 @@ class LocalNotificationService {
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
-    const settings = InitializationSettings(
+    const initializationSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
 
-    await notifications.initialize(settings: settings);
+    await notifications.initialize(
+      settings: initializationSettings,
+    );
 
     await notifications
         .resolvePlatformSpecificImplementation<
@@ -77,30 +81,37 @@ class LocalNotificationService {
 
     _initialized = true;
   }
-  Future<Map<String, bool>> getSettings() async {
-    final prefs = await SharedPreferences.getInstance();
 
+  // NOTIFICATION SETTINGS
+
+  Future<Map<String, bool>> getSettings() async {
+    final uid = auth.currentUser?.uid ?? 'guest';
+
+    final savedSettings =
+    await AppPreferences.getNotificationSettings(uid);
+
+    // Ensure every supported setting has a value.
     return {
       for (final entry in defaultSettings.entries)
-        entry.key:
-        prefs.getBool('$_settingsPrefix${entry.key}') ?? entry.value,
+        entry.key: savedSettings[entry.key] ?? entry.value,
     };
   }
 
   Future<void> updateSetting(String key, bool value) async {
     if (!defaultSettings.containsKey(key)) {
-      throw ArgumentError.value(
-        key,
-        'key',
-        'Unknown notification setting',
-      );
+      throw ArgumentError('Unknown notification setting: $key');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final uid = auth.currentUser?.uid ?? 'guest';
 
-    await prefs.setBool('$_settingsPrefix$key', value);
+    await AppPreferences.saveNotificationSetting(
+      uid: uid,
+      key: key,
+      enabled: value,
+    );
 
-    if (key == 'generalNotification' || key == 'expenseReminder') {
+    if (key == 'generalNotification' ||
+        key == 'expenseReminder') {
       await refreshReminderSchedule();
     }
   }
@@ -133,6 +144,8 @@ class LocalNotificationService {
     }
   }
 
+  // FIRESTORE NOTIFICATION RECORDS
+
   Future<String?> createNotification({
     required String title,
     required String message,
@@ -141,6 +154,7 @@ class LocalNotificationService {
     DateTime? scheduledAt,
   }) async {
     if (auth.currentUser == null) return null;
+
     if (!await isEnabled(type)) return null;
 
     final document = await notificationCollection.add({
@@ -157,6 +171,9 @@ class LocalNotificationService {
 
     return document.id;
   }
+
+
+  // SHOW LOCAL NOTIFICATION
 
   Future<void> showNotification({
     required int id,
@@ -190,6 +207,8 @@ class LocalNotificationService {
     );
   }
 
+  // TRANSACTION NOTIFICATIONS
+
   Future<void> addTransactionNotification({
     required String title,
     required String message,
@@ -206,13 +225,17 @@ class LocalNotificationService {
     );
 
     await showNotification(
-      id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647),
+      id: DateTime.now().millisecondsSinceEpoch.remainder(
+        2147483647,
+      ),
       title: title,
       body: message,
       type: type,
       payload: type,
     );
   }
+
+  // LOW BALANCE ALERTS
 
   Future<void> addLowBalanceNotification({
     required double balance,
@@ -237,6 +260,8 @@ class LocalNotificationService {
       payload: 'low_balance',
     );
   }
+
+  // SCHEDULE A REMINDER
 
   Future<void> scheduleReminder({
     required int id,
@@ -295,6 +320,8 @@ class LocalNotificationService {
       });
     }
   }
+
+  // DEFAULT WEEKLY EXPENSE REMINDER
 
   Future<void> scheduleDefaultWeeklyExpenseReminder() async {
     await initialize();
@@ -359,6 +386,7 @@ class LocalNotificationService {
     }
   }
 
+
   Future<void> refreshReminderSchedule() async {
     final settings = await getSettings();
 
@@ -370,6 +398,7 @@ class LocalNotificationService {
 
     await scheduleDefaultWeeklyExpenseReminder();
   }
+//bug noti
   Future<void> addBudgetNotification({
     required String title,
     required String message,
@@ -391,7 +420,9 @@ class LocalNotificationService {
       type: 'budget',
       payload: 'budget',
     );
-  }  Future<void> cancelReminder(int id) async {
+  }
+
+  Future<void> cancelReminder(int id) async {
     await notifications.cancel(id: id);
   }
 }

@@ -1,9 +1,11 @@
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/datasources/local_notification.dart';
 import '../../../domain/repositories/local_notific/local.dart';
 import 'local_event.dart';
 import 'local_state.dart';
+
 class NotificationSettingsBloc
     extends Bloc<NotificationSettingsEvent, NotificationSettingsState> {
   final NotificationSettingsRepository repository;
@@ -47,11 +49,10 @@ class NotificationSettingsBloc
       Emitter<NotificationSettingsState> emit,
       ) async {
     if (state.savingKeys.contains(event.key)) return;
-
     if (!state.settings.containsKey(event.key)) return;
 
-    final previousValue = state.settings[event.key]!;
-    final updatedSettings = Map<String, bool>.from(state.settings)
+    final previousSettings = Map<String, bool>.from(state.settings);
+    final updatedSettings = Map<String, bool>.from(previousSettings)
       ..[event.key] = event.value;
 
     final savingKeys = Set<String>.from(state.savingKeys)
@@ -71,25 +72,18 @@ class NotificationSettingsBloc
         await notificationService.refreshReminderSchedule();
       }
 
-      final remainingKeys = Set<String>.from(state.savingKeys)
-        ..remove(event.key);
-
       emit(state.copyWith(
         status: NotificationSettingsStatus.loaded,
-        savingKeys: remainingKeys,
+        savingKeys: Set<String>.from(state.savingKeys)
+          ..remove(event.key),
         clearError: true,
       ));
     } catch (_) {
-      final restoredSettings = Map<String, bool>.from(state.settings)
-        ..[event.key] = previousValue;
-
-      final remainingKeys = Set<String>.from(state.savingKeys)
-        ..remove(event.key);
-
       emit(state.copyWith(
         status: NotificationSettingsStatus.loaded,
-        settings: restoredSettings,
-        savingKeys: remainingKeys,
+        settings: previousSettings,
+        savingKeys: Set<String>.from(state.savingKeys)
+          ..remove(event.key),
         errorMessage: 'Unable to save notification settings.',
       ));
     }

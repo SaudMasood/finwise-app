@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +15,17 @@ import '../../bloc/analytics/analytics_state.dart';
 import '../notification/notification.dart';
 import 'cleander.dart';
 import 'serchpge.dart';
+
+class _LightColors {
+  static const Color green = Color(0xFF00D09E);
+  static const Color darkGreen = Color(0xFF052224);
+  static const Color softGreen = Color(0xFFDFF7E2);
+  static const Color paleGreen = Color(0xFFF1FFF3);
+  static const Color lightBlue = Color(0xFF6DB6FE);
+  static const Color axisBlue = Color(0xFF3299FF);
+  static const Color strongBlue = Color(0xFF0068FF);
+  static const Color white = Color(0xFFFFFFFF);
+}
 
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
@@ -62,31 +72,40 @@ class _AnalysisViewState extends State<_AnalysisView> {
 
   bool get isDark => Theme.of(context).brightness == Brightness.dark;
 
-  Color get mainGreen => AppColors.primaryGreen;
+  Color get mainGreen =>
+      isDark ? AppColors.primaryGreen : _LightColors.green;
 
-  Color get lightGreen => isDark
-      ? Theme.of(context).scaffoldBackgroundColor
-      : AppColors.lightBackground;
+  Color get bodyColor =>
+      isDark ? Theme.of(context).scaffoldBackgroundColor : _LightColors.white;
 
   Color get softGreen => isDark
       ? Theme.of(context).colorScheme.surfaceContainerHighest
-      : AppColors.softGreen;
+      : _LightColors.softGreen;
 
-  Color get darkGreen => Theme.of(context).colorScheme.onSurface;
+  Color get blue => isDark ? AppColors.blue : _LightColors.axisBlue;
 
-  Color get blue => AppColors.blue;
+  Color get gridBlue => isDark ? AppColors.blue : _LightColors.lightBlue;
 
-  Color get strongBlue => AppColors.strongBlue;
+  Color get strongBlue =>
+      isDark ? AppColors.strongBlue : _LightColors.strongBlue;
 
-  Color get screenBackground => Theme.of(context).scaffoldBackgroundColor;
+  Color get screenBackground => isDark
+      ? Theme.of(context).scaffoldBackgroundColor
+      : _LightColors.green;
 
-  Color get headerTextColor =>
-      isDark ? Theme.of(context).colorScheme.onSurface : AppColors.darkGreen;
+  Color get headerTextColor => isDark
+      ? Theme.of(context).colorScheme.onSurface
+      : _LightColors.darkGreen;
 
   Color get headerIconColor =>
-      isDark ? Theme.of(context).colorScheme.onSurface : Colors.white;
+      isDark ? Theme.of(context).colorScheme.onSurface : _LightColors.white;
 
-  Color get cardTextColor => Theme.of(context).colorScheme.onSurface;
+  Color get cardTextColor => isDark
+      ? Theme.of(context).colorScheme.onSurface
+      : _LightColors.darkGreen;
+
+  Color get onGreenColor =>
+      isDark ? AppColors.darkBackground : _LightColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
@@ -172,14 +191,16 @@ class _AnalysisViewState extends State<_AnalysisView> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: lightGreen,
+                      color: bodyColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(50),
                         topRight: Radius.circular(50),
                       ),
                     ),
                     child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(30, 28, 30, 130),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,7 +271,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
             decoration: BoxDecoration(
               color: isDark
                   ? Theme.of(context).colorScheme.surfaceContainerHighest
-                  : AppColors.lightBackground,
+                  : _LightColors.paleGreen,
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -284,7 +305,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
             child: _summaryItem(
               'Total Balance',
               '\$${balance.toStringAsFixed(2)}',
-              isDark ? cardTextColor : Colors.white,
+              headerTextColor,
             ),
           ),
           Container(width: 1, height: 42, color: headerIconColor),
@@ -359,7 +380,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
             decoration: BoxDecoration(
               color: isDark
                   ? Theme.of(context).colorScheme.surfaceContainerHighest
-                  : Colors.white,
+                  : _LightColors.white,
               borderRadius: BorderRadius.circular(20),
             ),
             child: ClipRRect(
@@ -374,7 +395,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
                     padding: const EdgeInsets.only(left: 12),
                     alignment: Alignment.centerLeft,
                     decoration: BoxDecoration(
-                      color: isDark ? mainGreen : AppColors.darkGreen,
+                      color: isDark ? mainGreen : _LightColors.darkGreen,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -384,7 +405,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
                         fontWeight: FontWeight.w500,
                         color: isDark
                             ? AppColors.darkBackground
-                            : Colors.white,
+                            : _LightColors.white,
                       ),
                     ),
                   ),
@@ -398,10 +419,12 @@ class _AnalysisViewState extends State<_AnalysisView> {
                         style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
+                          fontStyle:
+                          isDark ? FontStyle.normal : FontStyle.italic,
                           color: amountOnDark
                               ? (isDark
                               ? AppColors.darkBackground
-                              : Colors.white)
+                              : _LightColors.white)
                               : cardTextColor,
                         ),
                       ),
@@ -494,7 +517,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
         child: Icon(
           icon,
           size: 17,
-          color: isDark ? AppColors.darkBackground : AppColors.darkGreen,
+          color: onGreenColor,
         ),
       ),
     );
@@ -516,7 +539,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
       _shortNumber(maximum),
       _shortNumber(maximum * 2 / 3),
       _shortNumber(maximum / 3),
-      '0',
+      isDark ? '0' : _shortNumber(maximum / 15),
     ];
 
     return Container(
@@ -568,9 +591,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
                   child: Icon(
                     Icons.calendar_month_outlined,
                     size: 19,
-                    color: isDark
-                        ? AppColors.darkBackground
-                        : AppColors.darkGreen,
+                    color: onGreenColor,
                   ),
                 ),
               ),
@@ -609,7 +630,8 @@ class _AnalysisViewState extends State<_AnalysisView> {
                             children: List.generate(4, (_) {
                               return Container(
                                 height: 1,
-                                color: blue.withOpacity(0.35),
+                                color: gridBlue
+                                    .withOpacity(isDark ? 0.35 : 0.5),
                               );
                             }),
                           ),
@@ -758,7 +780,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
       child: Container(
         height: 150,
         decoration: BoxDecoration(
-          color: isDark ? softGreen : blue,
+          color: isDark ? softGreen : _LightColors.lightBlue,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Column(
@@ -778,7 +800,7 @@ class _AnalysisViewState extends State<_AnalysisView> {
                       strokeWidth: 3,
                       backgroundColor: isDark
                           ? Theme.of(context).colorScheme.outline
-                          : Colors.white,
+                          : _LightColors.white,
                       valueColor: AlwaysStoppedAnimation<Color>(strongBlue),
                     ),
                   ),

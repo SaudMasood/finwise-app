@@ -1,6 +1,6 @@
 import '../../../domain/entities/notification/notification.dart';
 import '../../../domain/repositories/notification/notification_repository.dart';
-import '../../datasources/notification_datasource.dart';
+import '../../datasources/firestore_notification_datasource.dart';
 
 class NotificationRepositoryImpl
     implements NotificationRepository {

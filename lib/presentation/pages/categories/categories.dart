@@ -42,7 +42,7 @@ class CategoriesScreen extends StatelessWidget {
       dataSource: dataSource,
     );
 
-    return BlocProvider(
+    return BlocProvider<CategoryBloc>(
       create: (_) => CategoryBloc(
         getCategoriesUseCase:
         GetCategoriesUseCase(repository: repository),
@@ -89,7 +89,7 @@ class CategoriesView extends StatefulWidget {
 }
 
 class _CategoriesViewState extends State<CategoriesView> {
-  int selectedIndex = 0;
+  int selectedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -104,8 +104,9 @@ class _CategoriesViewState extends State<CategoriesView> {
         ? AppColors.darkSurface
         : CategoriesView.lightGreen;
 
-    final textColor =
-    isDark ? AppColors.darkText : CategoriesView.darkGreen;
+    final textColor = isDark
+        ? AppColors.darkText
+        : CategoriesView.darkGreen;
 
     final secondaryTextColor = isDark
         ? AppColors.darkSecondaryText
@@ -118,397 +119,423 @@ class _CategoriesViewState extends State<CategoriesView> {
         ? AppColors.darkSearchField
         : CategoriesView.softGreen;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            const SizedBox(height: 14),
+    return BlocListener<CategoryBloc, CategoryState>(
+      listener: (context, state) {
+        if (state.status == CategoryStatus.failure) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.errorMessage ?? 'Something went wrong',
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
 
-            // Header
-            Row(
-              children: [
-                const SizedBox(width: 25),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Icon(
-                    Icons.arrow_back,
-                    color: isDark
-                        ? AppColors.darkText
-                        : AppColors.white,
-                    size: 28,
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      'Categories',
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.darkText
-                            : CategoriesView.darkGreen,
-                      ),
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 34,
-                  height: 34,
-                  margin: const EdgeInsets.only(right: 25),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.darkCard
-                        : CategoriesView.lightGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                          const NotificationScreen(),
-                        ),
-                      );
-                    },
-                    icon: Icon(
-                      Icons.notifications_none,
+        if (state.status == CategoryStatus.saved &&
+            state.savedType == 'category') {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Category added successfully'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const SizedBox(height: 14),
+
+              // Header
+              Row(
+                children: [
+                  const SizedBox(width: 25),
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: Icon(
+                      Icons.arrow_back,
                       color: isDark
                           ? AppColors.darkText
-                          : AppColors.darkGreen,
+                          : AppColors.white,
+                      size: 28,
                     ),
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Total balance and expense
-            BlocBuilder<CategoryBloc, CategoryState>(
-              builder: (context, state) {
-                return Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 36),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _summaryItem(
-                          label: 'Total Balance',
-                          value:
-                          '\$${state.totalBalance.toStringAsFixed(2)}',
-                          valueColor: isDark
-                              ? AppColors.darkText
-                              : AppColors.white,
-                          labelColor: secondaryTextColor,
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 42,
-                        color: isDark
-                            ? AppColors.darkDivider
-                            : AppColors.white,
-                      ),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: _summaryItem(
-                          label: 'Total Expense',
-                          value:
-                          '-\$${state.totalExpense.toStringAsFixed(2)}',
-                          valueColor:
-                          CategoriesView.selectedBlue,
-                          labelColor: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            // Expense progress bar
-            BlocBuilder<CategoryBloc, CategoryState>(
-              builder: (context, state) {
-                final income = state.totalIncome;
-                final expense = state.totalExpense;
-
-                final percentage = income > 0
-                    ? (expense / income * 100)
-                    .clamp(0.0, 100.0)
-                    : 0.0;
-
-                return Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 36),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final totalWidth = constraints.maxWidth;
-                      const barHeight = 26.0;
-
-                      var fillWidth =
-                          totalWidth * percentage / 100;
-
-                      const minimumFill = 54.0;
-
-                      if (fillWidth > 0 &&
-                          fillWidth < minimumFill) {
-                        fillWidth = minimumFill;
-                      }
-
-                      if (fillWidth > totalWidth) {
-                        fillWidth = totalWidth;
-                      }
-
-                      final amountOnGreen =
-                          fillWidth > totalWidth - 110;
-
-                      return Container(
-                        width: double.infinity,
-                        height: barHeight,
-                        decoration: BoxDecoration(
-                          color: trackColor,
-                          borderRadius:
-                          BorderRadius.circular(20),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                          BorderRadius.circular(20),
-                          child: Stack(
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(
-                                  milliseconds: 500,
-                                ),
-                                curve: Curves.easeOut,
-                                width: fillWidth,
-                                height: barHeight,
-                                padding:
-                                const EdgeInsets.only(left: 12),
-                                alignment: Alignment.centerLeft,
-                                decoration: BoxDecoration(
-                                  color:
-                                  CategoriesView.darkGreen,
-                                  borderRadius:
-                                  BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '${percentage.toStringAsFixed(0)}%',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 14,
-                                top: 0,
-                                bottom: 0,
-                                child: Center(
-                                  child: Text(
-                                    '\$${income.toStringAsFixed(2)}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: amountOnGreen
-                                          ? Colors.white
-                                          : (isDark
-                                          ? Colors.white
-                                          : CategoriesView
-                                          .darkGreen),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            // Expense percentage message
-            BlocBuilder<CategoryBloc, CategoryState>(
-              builder: (context, state) {
-                final income = state.totalIncome;
-
-                final percentage = income > 0
-                    ? (state.totalExpense / income * 100)
-                    .clamp(0.0, 100.0)
-                    : 0.0;
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_box_outlined,
-                      size: 15,
-                      color: isDark
-                          ? AppColors.lightGreen
-                          : CategoriesView.darkGreen,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
+                  Expanded(
+                    child: Center(
                       child: Text(
-                        '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
-                        textAlign: TextAlign.center,
+                        'Categories',
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
                           color: isDark
                               ? AppColors.darkText
                               : CategoriesView.darkGreen,
                         ),
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 22),
-
-            // Categories sheet
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: sheetColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(50),
-                    topRight: Radius.circular(50),
                   ),
-                ),
-                child: BlocBuilder<CategoryBloc, CategoryState>(
-                  builder: (context, state) {
-                    if (state.status ==
-                        CategoryStatus.failure) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            state.errorMessage ??
-                                'Something went wrong',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    final categories = [
-                      ...state.categories,
-                    ];
-
-                    if (!categories.any(
-                          (category) =>
-                      category.toLowerCase() == 'saving',
-                    )) {
-                      categories.add('Saving');
-                    }
-
-                    return GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        35,
-                        30,
-                        35,
-                        120,
-                      ),
-                      itemCount: categories.length + 1,
-                      gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 22,
-                        childAspectRatio: .78,
-                      ),
-                      itemBuilder: (context, index) {
-                        // Add category button
-                        if (index == categories.length) {
-                          return GestureDetector(
-                            onTap: () =>
-                                _showAddCategoryDialog(
-                                  context,
-                                  fieldColor,
-                                  textColor,
-                                  isDark,
-                                ),
-                            child: _CategoryItem(
-                              icon: Icons.add,
-                              label: 'More',
-                              selected: false,
-                              isDark: isDark,
-                            ),
-                          );
-                        }
-
-                        final category = categories[index];
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedIndex = index;
-                            });
-
-                            // Open savings screen through callback.
-                            if (category.toLowerCase() ==
-                                'saving') {
-                              widget.onOpenSavings(
-                                totalBalance:
-                                state.totalBalance,
-                                totalExpense:
-                                state.totalExpense,
-                                totalIncome:
-                                state.totalIncome,
-                              );
-                              return;
-                            }
-
-                            // Open selected category transactions.
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    CategoryExpenseScreen(
-                                      categoryName: category,
-                                    ),
-                              ),
-                            );
-                          },
-                          child: _CategoryItem(
-                            icon: _icon(category),
-                            label: category,
-                            selected: selectedIndex == index,
-                            isDark: isDark,
+                  Container(
+                    width: 34,
+                    height: 34,
+                    margin: const EdgeInsets.only(right: 25),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkCard
+                          : CategoriesView.lightGreen,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                            const NotificationScreen(),
                           ),
                         );
                       },
-                    );
-                  },
+                      icon: Icon(
+                        Icons.notifications_none,
+                        color: isDark
+                            ? AppColors.darkText
+                            : CategoriesView.darkGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Balance summary
+              BlocBuilder<CategoryBloc, CategoryState>(
+                builder: (context, state) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _summaryItem(
+                            label: 'Total Balance',
+                            value:
+                            '\$${state.totalBalance.toStringAsFixed(2)}',
+                            valueColor: isDark
+                                ? AppColors.darkText
+                                : AppColors.white,
+                            labelColor: secondaryTextColor,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 42,
+                          color: isDark
+                              ? AppColors.darkDivider
+                              : AppColors.white,
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: _summaryItem(
+                            label: 'Total Expense',
+                            value:
+                            '-\$${state.totalExpense.toStringAsFixed(2)}',
+                            valueColor:
+                            CategoriesView.selectedBlue,
+                            labelColor: secondaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 14),
+
+              // Expense progress bar
+              BlocBuilder<CategoryBloc, CategoryState>(
+                builder: (context, state) {
+                  final income = state.totalIncome;
+                  final expense = state.totalExpense;
+
+                  final percentage = income > 0
+                      ? (expense / income * 100)
+                      .clamp(0.0, 100.0)
+                      : 0.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final totalWidth =
+                            constraints.maxWidth;
+                        const barHeight = 26.0;
+
+                        var fillWidth =
+                            totalWidth * percentage / 100;
+
+                        if (fillWidth > 0 && fillWidth < 54) {
+                          fillWidth = 54;
+                        }
+
+                        if (fillWidth > totalWidth) {
+                          fillWidth = totalWidth;
+                        }
+
+                        final amountOnGreen =
+                            fillWidth > totalWidth - 110;
+
+                        return Container(
+                          width: double.infinity,
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            color: trackColor,
+                            borderRadius:
+                            BorderRadius.circular(20),
+                          ),
+                          child: ClipRRect(
+                            borderRadius:
+                            BorderRadius.circular(20),
+                            child: Stack(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(
+                                    milliseconds: 500,
+                                  ),
+                                  curve: Curves.easeOut,
+                                  width: fillWidth,
+                                  height: barHeight,
+                                  padding:
+                                  const EdgeInsets.only(
+                                    left: 12,
+                                  ),
+                                  alignment:
+                                  Alignment.centerLeft,
+                                  decoration: BoxDecoration(
+                                    color:
+                                    CategoriesView.darkGreen,
+                                    borderRadius:
+                                    BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${percentage.toStringAsFixed(0)}%',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 14,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Center(
+                                    child: Text(
+                                      '\$${income.toStringAsFixed(2)}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        fontWeight:
+                                        FontWeight.w600,
+                                        color: amountOnGreen
+                                            ? Colors.white
+                                            : (isDark
+                                            ? Colors.white
+                                            : CategoriesView
+                                            .darkGreen),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              // Expense percentage message
+              BlocBuilder<CategoryBloc, CategoryState>(
+                builder: (context, state) {
+                  final income = state.totalIncome;
+
+                  final percentage = income > 0
+                      ? (state.totalExpense / income * 100)
+                      .clamp(0.0, 100.0)
+                      : 0.0;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_box_outlined,
+                        size: 15,
+                        color: isDark
+                            ? AppColors.lightGreen
+                            : CategoriesView.darkGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: isDark
+                                ? AppColors.darkText
+                                : CategoriesView.darkGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 22),
+
+              // Categories grid
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: sheetColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                      topRight: Radius.circular(50),
+                    ),
+                  ),
+                  child: BlocBuilder<CategoryBloc, CategoryState>(
+                    builder: (context, state) {
+                      final categories = <String>[
+                        ...state.categories,
+                      ];
+
+                      if (!categories.any(
+                            (category) =>
+                        category.toLowerCase() == 'saving',
+                      )) {
+                        categories.add('Saving');
+                      }
+
+                      return Stack(
+                        children: [
+                          GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                              35,
+                              30,
+                              35,
+                              120,
+                            ),
+                            itemCount: categories.length + 1,
+                            gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 22,
+                              childAspectRatio: .78,
+                            ),
+                            itemBuilder: (context, index) {
+                              // Add category tile
+                              if (index == categories.length) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    _showAddCategoryDialog(
+                                      context,
+                                      fieldColor,
+                                      textColor,
+                                      isDark,
+                                    );
+                                  },
+                                  child: _CategoryItem(
+                                    icon: Icons.add,
+                                    label: 'More',
+                                    selected: false,
+                                    isDark: isDark,
+                                  ),
+                                );
+                              }
+
+                              final category =
+                              categories[index];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedIndex = index;
+                                  });
+
+                                  if (category.toLowerCase() ==
+                                      'saving') {
+                                    widget.onOpenSavings(
+                                      totalBalance:
+                                      state.totalBalance,
+                                      totalExpense:
+                                      state.totalExpense,
+                                      totalIncome:
+                                      state.totalIncome,
+                                    );
+                                    return;
+                                  }
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          CategoryExpenseScreen(
+                                            categoryName: category,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: _CategoryItem(
+                                  icon: _icon(category),
+                                  label: category,
+                                  selected:
+                                  selectedIndex == index,
+                                  isDark: isDark,
+                                ),
+                              );
+                            },
+                          ),
+
+                          if (state.status ==
+                              CategoryStatus.loading &&
+                              state.categories.isEmpty)
+                            const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Summary item
   Widget _summaryItem({
     required String label,
     required String value,
@@ -556,21 +583,16 @@ class _CategoriesViewState extends State<CategoriesView> {
     );
   }
 
-  // Category icons
   static IconData _icon(String category) {
     final name = category.toLowerCase();
 
-    if (name.contains('food')) {
-      return Icons.restaurant;
-    }
+    if (name.contains('food')) return Icons.restaurant;
 
-    if (name.contains('transport') ||
-        name.contains('travel')) {
+    if (name.contains('transport') || name.contains('travel')) {
       return Icons.directions_bus_outlined;
     }
 
-    if (name.contains('medicine') ||
-        name.contains('health')) {
+    if (name.contains('medicine') || name.contains('health')) {
       return Icons.medication_outlined;
     }
 
@@ -578,9 +600,7 @@ class _CategoriesViewState extends State<CategoriesView> {
       return Icons.shopping_basket_outlined;
     }
 
-    if (name.contains('rent')) {
-      return Icons.key_outlined;
-    }
+    if (name.contains('rent')) return Icons.key_outlined;
 
     if (name.contains('gift')) {
       return Icons.card_giftcard_outlined;
@@ -606,107 +626,32 @@ class _CategoriesViewState extends State<CategoriesView> {
     return Icons.category_outlined;
   }
 
-  // Add category dialog
   void _showAddCategoryDialog(
       BuildContext context,
       Color fieldColor,
       Color textColor,
       bool isDark,
       ) {
-    final controller = TextEditingController();
+    // Capture the existing BLoC before opening the dialog.
+    final categoryBloc = context.read<CategoryBloc>();
 
-    showDialog(
+    showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark
-              ? AppColors.darkSurface
-              : AppColors.lightSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        return BlocProvider<CategoryBloc>.value(
+          value: categoryBloc,
+          child: _AddCategoryDialog(
+            fieldColor: fieldColor,
+            textColor: textColor,
+            isDark: isDark,
           ),
-          title: Center(
-            child: Text(
-              'New Category',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-          ),
-          content: TextField(
-            controller: controller,
-            style: TextStyle(color: textColor),
-            decoration: InputDecoration(
-              hintText: 'Write...',
-              hintStyle: TextStyle(
-                color: isDark
-                    ? AppColors.darkSecondaryText
-                    : AppColors.lightSecondaryText,
-              ),
-              filled: true,
-              fillColor: fieldColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          actions: [
-            Center(
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 165,
-                    height: 38,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final name = controller.text.trim();
-
-                        if (name.isEmpty) {
-                          return;
-                        }
-
-                        context.read<CategoryBloc>().add(
-                          AddNewCategory(category: name),
-                        );
-
-                        Navigator.pop(dialogContext);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                        CategoriesView.mainGreen,
-                        foregroundColor:
-                        AppColors.darkGreen,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                          BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('Save'),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.pop(dialogContext),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(color: textColor),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         );
       },
-    ).then((_) => controller.dispose());
+    );
   }
 }
 
-// Category grid item
 class _CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -722,8 +667,9 @@ class _CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor =
-    isDark ? AppColors.darkText : CategoriesView.darkGreen;
+    final labelColor = isDark
+        ? AppColors.darkText
+        : CategoriesView.darkGreen;
 
     return Column(
       children: [
@@ -754,6 +700,156 @@ class _CategoryItem extends StatelessWidget {
             fontWeight: FontWeight.w500,
             color: labelColor,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AddCategoryDialog extends StatefulWidget {
+  final Color fieldColor;
+  final Color textColor;
+  final bool isDark;
+
+  const _AddCategoryDialog({
+    required this.fieldColor,
+    required this.textColor,
+    required this.isDark,
+  });
+
+  @override
+  State<_AddCategoryDialog> createState() =>
+      _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends State<_AddCategoryDialog> {
+  late final TextEditingController _controller;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _saveCategory() {
+    if (_isSaving) return;
+
+    final name = _controller.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a category name.'),
+        ),
+      );
+      return;
+    }
+
+    // This succeeds because the existing CategoryBloc is
+    // provided to this dialog by BlocProvider.value.
+    final bloc = context.read<CategoryBloc>();
+
+    final exists = bloc.state.categories.any(
+          (category) =>
+      category.trim().toLowerCase() == name.toLowerCase(),
+    );
+
+    if (exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This category already exists.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    bloc.add(AddNewCategory(category: name));
+
+    // Close only the dialog route.
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: widget.isDark
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Center(
+        child: Text(
+          'New Category',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: widget.textColor,
+          ),
+        ),
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        enabled: !_isSaving,
+        style: TextStyle(color: widget.textColor),
+        decoration: InputDecoration(
+          hintText: 'Enter category name',
+          hintStyle: TextStyle(
+            color: widget.isDark
+                ? AppColors.darkSecondaryText
+                : AppColors.lightSecondaryText,
+          ),
+          filled: true,
+          fillColor: widget.fieldColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        onSubmitted: (_) => _saveCategory(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: widget.textColor),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _saveCategory,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: CategoriesView.mainGreen,
+            foregroundColor: AppColors.darkGreen,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: _isSaving
+              ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+            ),
+          )
+              : const Text('Save'),
         ),
       ],
     );

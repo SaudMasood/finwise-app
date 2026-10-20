@@ -3,8 +3,7 @@ import '../../../domain/repositories/categories/categories_repository.dart';
 import '../../datasources/categoriesdatasorces.dart';
 import '../../models/categories/expensemodel.dart';
 
-class CategoryRepositoryImpl
-    implements CategoryRepository {
+class CategoryRepositoryImpl implements CategoryRepository {
   final CategoryDataSource dataSource;
 
   CategoryRepositoryImpl({
@@ -29,9 +28,7 @@ class CategoryRepositoryImpl
   Future<void> addCategory({
     required String category,
   }) {
-    return dataSource.addCategory(
-      category: category,
-    );
+    return dataSource.addCategory(category: category);
   }
 
   @override
@@ -49,9 +46,7 @@ class CategoryRepositoryImpl
       type: 'expense',
     );
 
-    return dataSource.addExpense(
-      expense: model,
-    );
+    return dataSource.addExpense(expense: model);
   }
 
   @override
@@ -69,8 +64,6 @@ class CategoryRepositoryImpl
       type: 'income',
     );
 
-    return dataSource.addIncome(
-      income: model,
-    );
+    return dataSource.addIncome(income: model);
   }
 }

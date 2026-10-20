@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,13 +21,13 @@ class AddSavingsPage extends StatefulWidget {
 }
 
 class _AddSavingsPageState extends State<AddSavingsPage> {
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController messageController = TextEditingController();
+  final dateController = TextEditingController();
+  final amountController = TextEditingController();
+  final titleController = TextEditingController();
+  final messageController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
-  String selectedCategory = '';
+  late String selectedCategory;
   bool isSaving = false;
 
   bool get isDark =>
@@ -74,7 +73,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final double scale = (size.width / 375).clamp(0.85, 1.15);
+    final scale = (size.width / 375).clamp(0.85, 1.15).toDouble();
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -91,9 +90,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                     onTap: () => Navigator.pop(context),
                     child: Icon(
                       Icons.arrow_back,
-                      color: isDark
-                          ? AppColors.darkText
-                          : AppColors.white,
+                      color: isDark ? AppColors.darkText : AppColors.white,
                       size: 26 * scale,
                     ),
                   ),
@@ -104,9 +101,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 18 * scale,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? AppColors.darkText
-                              : AppColors.darkGreen,
+                          color: textColor,
                         ),
                       ),
                     ),
@@ -145,22 +140,31 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                   previous.savingSuccess != current.savingSuccess ||
                       previous.errorMessage != current.errorMessage,
                   listener: (context, state) {
+                    if (!mounted) return;
+
                     if (state.savingSuccess) {
+                      setState(() => isSaving = false);
+
+                      context.read<SavingsBloc>().add(
+                        const ClearSavingFeedback(),
+                      );
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Savings added successfully'),
                         ),
                       );
-                      Navigator.pop(context);
-                      return;
-                    }
 
-                    if (state.errorMessage != null &&
-                        !state.savingSuccess) {
+                      Navigator.pop(context);
+                    } else if (state.errorMessage != null) {
                       setState(() => isSaving = false);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(state.errorMessage!)),
+                      );
+
+                      context.read<SavingsBloc>().add(
+                        const ClearSavingFeedback(),
                       );
                     }
                   },
@@ -185,10 +189,12 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           onTap: _selectDate,
                         ),
                         SizedBox(height: 24 * scale),
+
                         _buildLabel('Category', scale),
                         SizedBox(height: 6 * scale),
                         _buildCategoryField(scale),
                         SizedBox(height: 24 * scale),
+
                         _buildLabel('Amount', scale),
                         SizedBox(height: 6 * scale),
                         _buildTextField(
@@ -200,6 +206,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           ),
                         ),
                         SizedBox(height: 24 * scale),
+
                         _buildLabel('Expense Title', scale),
                         SizedBox(height: 6 * scale),
                         _buildTextField(
@@ -207,6 +214,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           scale: scale,
                         ),
                         SizedBox(height: 24 * scale),
+
                         Container(
                           width: double.infinity,
                           height: 150 * scale,
@@ -237,10 +245,11 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
                           ),
                         ),
                         SizedBox(height: 28 * scale),
+
                         Center(
                           child: SizedBox(
                             width: 125 * scale,
-                            height: 32 * scale,
+                            height: 36 * scale,
                             child: ElevatedButton(
                               onPressed: isSaving ? null : _saveSaving,
                               style: ElevatedButton.styleFrom(
@@ -345,9 +354,8 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
         decoration: InputDecoration(
           border: InputBorder.none,
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16 * scale,
-          ),
+          contentPadding:
+          EdgeInsets.symmetric(horizontal: 16 * scale),
           suffixIcon: showCalendar
               ? Padding(
             padding: EdgeInsets.only(right: 10 * scale),
@@ -364,79 +372,89 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
   }
 
   Widget _buildCategoryField(double scale) {
-    return GestureDetector(
-      onTap: () {
-        final categories =
-            context.read<SavingsBloc>().state.savingCategories;
+    return BlocBuilder<SavingsBloc, SavingsState>(
+      buildWhen: (previous, current) =>
+      previous.savingCategories != current.savingCategories,
+      builder: (context, state) {
+        final categories = state.savingCategories;
 
-        if (categories.isEmpty) return;
+        return GestureDetector(
+          onTap: () {
+            if (categories.isEmpty) {
+              _showMessage('No categories available yet');
+              return;
+            }
 
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: surfaceColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(25),
-            ),
-          ),
-          builder: (bottomSheetContext) {
-            return SafeArea(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(20),
-                children: categories.map((category) {
-                  return ListTile(
-                    title: Text(
-                      category,
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: textColor,
-                      ),
-                    ),
-                    trailing: category == selectedCategory
-                        ? Icon(Icons.check, color: buttonColor)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                      Navigator.pop(bottomSheetContext);
-                    },
-                  );
-                }).toList(),
-              ),
-            );
-          },
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        height: 38 * scale,
-        padding: EdgeInsets.symmetric(horizontal: 16 * scale),
-        decoration: BoxDecoration(
-          color: fieldColor,
-          borderRadius: BorderRadius.circular(20 * scale),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                selectedCategory,
-                style: GoogleFonts.poppins(
-                  fontSize: 12 * scale,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
+            showModalBottomSheet<void>(
+              context: context,
+              backgroundColor: surfaceColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(25),
                 ),
               ),
+              builder: (sheetContext) {
+                return SafeArea(
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(20),
+                    children: categories.map((category) {
+                      return ListTile(
+                        title: Text(
+                          category,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: textColor,
+                          ),
+                        ),
+                        trailing: category == selectedCategory
+                            ? Icon(Icons.check, color: buttonColor)
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                          Navigator.pop(sheetContext);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            height: 38 * scale,
+            padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+            decoration: BoxDecoration(
+              color: fieldColor,
+              borderRadius: BorderRadius.circular(20 * scale),
             ),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 20 * scale,
-              color: secondaryTextColor,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedCategory,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12 * scale,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 20 * scale,
+                  color: secondaryTextColor,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -447,19 +465,18 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder: (context, child) {
-        final dark = Theme.of(context).brightness == Brightness.dark;
+        final dark =
+            Theme.of(context).brightness == Brightness.dark;
 
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.fromSeed(
               seedColor: AppColors.primaryGreen,
               brightness: dark ? Brightness.dark : Brightness.light,
-              surface: dark
-                  ? AppColors.darkSurface
-                  : AppColors.lightGreen,
-              onSurface: dark
-                  ? AppColors.darkText
-                  : AppColors.darkGreen,
+              surface:
+              dark ? AppColors.darkSurface : AppColors.lightGreen,
+              onSurface:
+              dark ? AppColors.darkText : AppColors.darkGreen,
             ),
           ),
           child: child!,
@@ -467,7 +484,7 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
       },
     );
 
-    if (result == null) return;
+    if (result == null || !mounted) return;
 
     setState(() {
       selectedDate = result;
@@ -487,12 +504,12 @@ class _AddSavingsPageState extends State<AddSavingsPage> {
 
     final amount = double.tryParse(amountText);
 
-    if (amount == null || amount <= 0) {
+    if (amount == null || !amount.isFinite || amount <= 0) {
       _showMessage('Enter a valid amount');
       return;
     }
 
-    if (selectedCategory.isEmpty) {
+    if (selectedCategory.trim().isEmpty) {
       _showMessage('Select category');
       return;
     }

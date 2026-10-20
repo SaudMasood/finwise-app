@@ -43,6 +43,10 @@ class _PasswordSettingScreenState
   Color get _surface =>
       _isDark ? AppColors.darkSurface : AppColors.lightGreen;
 
+  // App bar title: same as Settings screen (dark green on light, light on dark).
+  Color get _headerTextColor =>
+      _isDark ? AppColors.darkText : AppColors.darkGreen;
+
   // Label sits OUTSIDE the field (like Figma): light on dark, dark on light.
   Color get _labelColor =>
       _isDark ? AppColors.darkText : AppColors.darkGreen;
@@ -161,61 +165,68 @@ class _PasswordSettingScreenState
     _confirmPasswordController.clear();
   }
 
+  // App bar: same as Settings screen.
   Widget _header() {
     return SizedBox(
-      height: 88,
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: () => Navigator.maybePop(context),
-            icon: Icon(
-              Icons.arrow_back,
-              color: _isDark ? AppColors.darkText : AppColors.white,
-              size: 23,
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Password Settings',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: _isDark ? AppColors.darkText : AppColors.white,
+      height: 72,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: Row(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.maybePop(context),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: _isDark ? AppColors.darkText : AppColors.white,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _isDark ? _figmaMint : AppColors.lightGreen,
-                shape: BoxShape.circle,
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Password Settings',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _headerTextColor,
+                  ),
+                ),
               ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                tooltip: 'Notifications',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const NotificationScreen(),
-                    ),
-                  );
-                },
-                icon: Icon(
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const NotificationScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: _isDark ? AppColors.darkCard : AppColors.lightGreen,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
                   Icons.notifications_none,
-                  color: _isDark ? _figmaDarkTeal : AppColors.darkGreen,
-                  size: 22,
+                  color: _isDark ? AppColors.darkText : AppColors.darkGreen,
+                  size: 16,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -315,6 +326,7 @@ class _PasswordSettingScreenState
         return Scaffold(
           backgroundColor: _background,
           body: SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 _header(),
@@ -324,18 +336,18 @@ class _PasswordSettingScreenState
                     decoration: BoxDecoration(
                       color: _surface,
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(45),
-                        topRight: Radius.circular(45),
+                        topLeft: Radius.circular(55),
+                        topRight: Radius.circular(55),
                       ),
                     ),
                     child: SingleChildScrollView(
                       keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(
-                        28,
-                        48,
-                        28,
-                        28,
+                      padding: EdgeInsets.fromLTRB(
+                        31,
+                        50,
+                        31,
+                        28 + MediaQuery.of(context).padding.bottom,
                       ),
                       child: Form(
                         key: _formKey,

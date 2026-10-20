@@ -1,11 +1,10 @@
+
 import '../../repositories/saving/saving_repo.dart';
 
 class AddSavingCategoryUseCase {
   final SavingsRepository repository;
 
-  AddSavingCategoryUseCase({
-    required this.repository,
-  });
+  AddSavingCategoryUseCase(this.repository);
 
   Future<void> call({
     required String name,

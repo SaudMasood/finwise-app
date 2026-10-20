@@ -15,9 +15,11 @@ class CategoryState extends Equatable {
   final CategoryStatus status;
   final List<String> categories;
   final List<ExpenseEntity> transactions;
+
   final double totalIncome;
   final double totalExpense;
   final double totalBalance;
+
   final String? savedType;
   final String? errorMessage;
 
@@ -51,8 +53,7 @@ class CategoryState extends Equatable {
       totalIncome: totalIncome ?? this.totalIncome,
       totalExpense: totalExpense ?? this.totalExpense,
       totalBalance: totalBalance ?? this.totalBalance,
-      savedType:
-      clearAction ? null : savedType ?? this.savedType,
+      savedType: clearAction ? null : savedType ?? this.savedType,
       errorMessage:
       clearError ? null : errorMessage ?? this.errorMessage,
     );

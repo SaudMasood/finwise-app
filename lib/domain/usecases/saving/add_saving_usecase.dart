@@ -5,13 +5,9 @@ import '../../repositories/saving/saving_repo.dart';
 class AddSavingUseCase {
   final SavingsRepository repository;
 
-  AddSavingUseCase({
-    required this.repository,
-  });
+  AddSavingUseCase(this.repository);
 
-  Future<void> call(
-      SavingEntity saving,
-      ) {
+  Future<void> call(SavingEntity saving) {
     return repository.addSaving(saving);
   }
 }

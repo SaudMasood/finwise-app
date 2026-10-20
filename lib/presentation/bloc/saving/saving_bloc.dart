@@ -1,29 +1,27 @@
 import 'dart:async';
 
-import 'package:finwise/presentation/bloc/saving/saving_event.dart';
-import 'package:finwise/presentation/bloc/saving/saving_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../domain/entities/saving/saving.dart';
 import '../../../domain/usecases/saving/add_saving_category_usecase.dart';
 import '../../../domain/usecases/saving/add_saving_usecase.dart';
 import '../../../domain/usecases/saving/get _saving_usecas.dart';
 import '../../../domain/usecases/saving/get_saving_goal_usecase.dart';
 import '../../../domain/usecases/saving/get_savings_categories_usecase.dart';
+import 'saving_event.dart';
+import 'saving_state.dart';
 
-
-class SavingsBloc
-    extends Bloc<SavingsEvent, SavingsState> {
+class SavingsBloc extends Bloc<SavingsEvent, SavingsState> {
   final GetSavingsUseCase getSavingsUseCase;
-  final GetSavingsCategoriesUseCase
-  getSavingsCategoriesUseCase;
-  final GetSavingGoalUseCase
-  getSavingGoalUseCase;
+  final GetSavingsCategoriesUseCase getSavingsCategoriesUseCase;
+  final GetSavingGoalUseCase getSavingGoalUseCase;
   final AddSavingUseCase addSavingUseCase;
-  final AddSavingCategoryUseCase
-  addSavingCategoryUseCase;
+  final AddSavingCategoryUseCase addSavingCategoryUseCase;
 
-  StreamSubscription? _savingsSubscription;
-  StreamSubscription? _categoriesSubscription;
+  StreamSubscription<List<String>>? _categoriesSubscription;
+  StreamSubscription<List<SavingEntity>>? _savingsSubscription;
+
+  String? _activeCategory;
 
   SavingsBloc({
     required this.getSavingsUseCase,
@@ -32,128 +30,78 @@ class SavingsBloc
     required this.addSavingUseCase,
     required this.addSavingCategoryUseCase,
   }) : super(const SavingsState()) {
-    on<LoadSavingsCategories>(
-      _onLoadSavingsCategories,
-    );
-
-    on<SavingCategoriesUpdated>(
-      _onSavingCategoriesUpdated,
-    );
-
-    on<AddSavingCategory>(
-      _onAddSavingCategory,
-    );
-
-    on<LoadSavings>(
-      _onLoadSavings,
-    );
-
-    on<SavingsUpdated>(
-      _onSavingsUpdated,
-    );
-
-    on<LoadSavingGoal>(
-      _onLoadSavingGoal,
-    );
-
-    on<AddSaving>(
-      _onAddSaving,
-    );
+    on<LoadSavingsCategories>(_onLoadCategories);
+    on<SavingCategoriesUpdated>(_onCategoriesUpdated);
+    on<AddSavingCategory>(_onAddCategory);
+    on<LoadSavings>(_onLoadSavings);
+    on<SavingsUpdated>(_onSavingsUpdated);
+    on<LoadSavingGoal>(_onLoadGoal);
+    on<AddSaving>(_onAddSaving);
+    on<ClearSavingFeedback>(_onClearFeedback);
+    on<InternalSavingsError>(_onError);
   }
 
-  Future<void> _onLoadSavingsCategories(
+  Future<void> _onLoadCategories(
       LoadSavingsCategories event,
       Emitter<SavingsState> emit,
       ) async {
-    emit(
-      state.copyWith(
-        status: SavingsStatus.loading,
-      ),
-    );
-
-    await _categoriesSubscription?.cancel();
+    emit(state.copyWith(
+      status: SavingsStatus.loading,
+      clearErrorMessage: true,
+    ));
 
     try {
+      await _categoriesSubscription?.cancel();
+
       _categoriesSubscription =
           getSavingsCategoriesUseCase().listen(
                 (categories) {
-              add(
-                SavingCategoriesUpdated(
-                  categories: categories,
-                ),
-              );
+              add(SavingCategoriesUpdated(categories));
+            },
+            onError: (Object error) {
+              add(InternalSavingsError(error.toString()));
             },
           );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          status: SavingsStatus.failure,
-          errorMessage: e.toString(),
-        ),
-      );
+    } catch (error) {
+      emit(state.copyWith(
+        status: SavingsStatus.failure,
+        errorMessage: error.toString(),
+      ));
     }
   }
 
-  void _onSavingCategoriesUpdated(
+  void _onCategoriesUpdated(
       SavingCategoriesUpdated event,
       Emitter<SavingsState> emit,
       ) {
-    emit(
-      state.copyWith(
-        status: SavingsStatus.success,
-        savingCategories: event.categories,
-      ),
-    );
+    emit(state.copyWith(
+      status: SavingsStatus.success,
+      savingCategories: event.categories,
+      categoryAdded: false,
+      clearErrorMessage: true,
+    ));
   }
 
-  Future<void> _onAddSavingCategory(
+  Future<void> _onAddCategory(
       AddSavingCategory event,
       Emitter<SavingsState> emit,
       ) async {
     try {
-      final name = event.name.trim();
-
-      if (name.isEmpty) {
-        return;
-      }
-
-      final alreadyExists =
-      state.savingCategories.any(
-            (category) =>
-        category.toLowerCase() ==
-            name.toLowerCase(),
-      );
-
-      if (alreadyExists) {
-        emit(
-          state.copyWith(
-            errorMessage:
-            'Saving category already exists',
-            categoryAdded: false,
-          ),
-        );
-
-        return;
-      }
-
       await addSavingCategoryUseCase(
-        name: name,
+        name: event.name,
         goal: event.goal,
       );
 
-      emit(
-        state.copyWith(
-          categoryAdded: true,
-          errorMessage: null,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          categoryAdded: false,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: SavingsStatus.success,
+        categoryAdded: true,
+        clearErrorMessage: true,
+      ));
+    } catch (error) {
+      emit(state.copyWith(
+        status: SavingsStatus.failure,
+        errorMessage: error.toString(),
+      ));
     }
   }
 
@@ -161,44 +109,30 @@ class SavingsBloc
       LoadSavings event,
       Emitter<SavingsState> emit,
       ) async {
-    emit(
-      state.copyWith(
-        status: SavingsStatus.loading,
-        savingSuccess: false,
-      ),
-    );
+    _activeCategory = event.category;
 
-    await _savingsSubscription?.cancel();
+    emit(state.copyWith(
+      status: SavingsStatus.loading,
+      savings: const [],
+      clearErrorMessage: true,
+    ));
 
     try {
-      final goal = await getSavingGoalUseCase(
-        event.category,
-      );
+      await _savingsSubscription?.cancel();
 
-      emit(
-        state.copyWith(
-          goal: goal,
-          status: SavingsStatus.success,
-        ),
+      _savingsSubscription = getSavingsUseCase(event.category).listen(
+            (savings) {
+          add(SavingsUpdated(savings));
+        },
+        onError: (Object error) {
+          add(InternalSavingsError(error.toString()));
+        },
       );
-
-      _savingsSubscription =
-          getSavingsUseCase(event.category).listen(
-                (savings) {
-              add(
-                SavingsUpdated(
-                  savings: savings,
-                ),
-              );
-            },
-          );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          status: SavingsStatus.failure,
-          errorMessage: e.toString(),
-        ),
-      );
+    } catch (error) {
+      emit(state.copyWith(
+        status: SavingsStatus.failure,
+        errorMessage: error.toString(),
+      ));
     }
   }
 
@@ -206,34 +140,34 @@ class SavingsBloc
       SavingsUpdated event,
       Emitter<SavingsState> emit,
       ) {
-    emit(
-      state.copyWith(
-        status: SavingsStatus.success,
-        savings: event.savings,
-      ),
-    );
+    emit(state.copyWith(
+      status: SavingsStatus.success,
+      savings: event.savings,
+      clearErrorMessage: true,
+    ));
   }
 
-  Future<void> _onLoadSavingGoal(
+  Future<void> _onLoadGoal(
       LoadSavingGoal event,
       Emitter<SavingsState> emit,
       ) async {
     try {
-      final goal = await getSavingGoalUseCase(
-        event.category,
-      );
+      final goal = await getSavingGoalUseCase(event.category);
 
-      emit(
-        state.copyWith(
-          goal: goal,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          errorMessage: e.toString(),
-        ),
-      );
+      // Prevent an older category request from changing the current goal.
+      if (_activeCategory != null &&
+          _activeCategory != event.category) {
+        return;
+      }
+
+      emit(state.copyWith(
+        goal: goal,
+        clearErrorMessage: true,
+      ));
+    } catch (error) {
+      emit(state.copyWith(
+        errorMessage: error.toString(),
+      ));
     }
   }
 
@@ -242,31 +176,47 @@ class SavingsBloc
       Emitter<SavingsState> emit,
       ) async {
     try {
-      await addSavingUseCase(
-        event.saving,
-      );
+      await addSavingUseCase(event.saving);
 
-      emit(
-        state.copyWith(
-          savingSuccess: true,
-          errorMessage: null,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          savingSuccess: false,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: SavingsStatus.success,
+        savingSuccess: true,
+        clearErrorMessage: true,
+      ));
+    } catch (error) {
+      emit(state.copyWith(
+        status: SavingsStatus.failure,
+        savingSuccess: false,
+        errorMessage: error.toString(),
+      ));
     }
+  }
+
+  void _onClearFeedback(
+      ClearSavingFeedback event,
+      Emitter<SavingsState> emit,
+      ) {
+    emit(state.copyWith(
+      savingSuccess: false,
+      categoryAdded: false,
+      clearErrorMessage: true,
+    ));
+  }
+
+  void _onError(
+      InternalSavingsError event,
+      Emitter<SavingsState> emit,
+      ) {
+    emit(state.copyWith(
+      status: SavingsStatus.failure,
+      errorMessage: event.message,
+    ));
   }
 
   @override
   Future<void> close() async {
-    await _savingsSubscription?.cancel();
     await _categoriesSubscription?.cancel();
-
+    await _savingsSubscription?.cancel();
     return super.close();
   }
 }

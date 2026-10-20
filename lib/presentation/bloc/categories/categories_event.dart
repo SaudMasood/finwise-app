@@ -25,7 +25,7 @@ class WatchCategoryTransactions extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [category];
+  List<Object?> get props => [category];
 }
 
 class CategoriesUpdated extends CategoryEvent {
@@ -36,7 +36,7 @@ class CategoriesUpdated extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [categories];
+  List<Object?> get props => [categories];
 }
 
 class TransactionsUpdated extends CategoryEvent {
@@ -47,7 +47,18 @@ class TransactionsUpdated extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [transactions];
+  List<Object?> get props => [transactions];
+}
+
+class CategoryStreamFailed extends CategoryEvent {
+  final String message;
+
+  const CategoryStreamFailed({
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [message];
 }
 
 class AddNewCategory extends CategoryEvent {
@@ -58,7 +69,7 @@ class AddNewCategory extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [category];
+  List<Object?> get props => [category];
 }
 
 class AddExpense extends CategoryEvent {
@@ -69,7 +80,7 @@ class AddExpense extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [expense];
+  List<Object?> get props => [expense];
 }
 
 class AddIncome extends CategoryEvent {
@@ -80,5 +91,5 @@ class AddIncome extends CategoryEvent {
   });
 
   @override
-  List<Object> get props => [income];
+  List<Object?> get props => [income];
 }
