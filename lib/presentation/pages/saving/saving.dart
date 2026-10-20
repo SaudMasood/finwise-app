@@ -33,33 +33,27 @@ class SavingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dataSource = SavingsDataSource(
-      firestore: FirebaseFirestore.instance,
-      firebaseAuth: FirebaseAuth.instance,
-    );
+    return BlocProvider<SavingsBloc>(
+      create: (_) {
+        final dataSource = SavingsDataSource(
+          firestore: FirebaseFirestore.instance,
+          firebaseAuth: FirebaseAuth.instance,
+        );
 
-    final repository = SavingsRepositoryImpl(
-      dataSource: dataSource,
-    );
+        final repository = SavingsRepositoryImpl(
+          dataSource: dataSource,
+        );
 
-    return BlocProvider(
-      create: (_) => SavingsBloc(
-        getSavingsUseCase: GetSavingsUseCase(
-          repository: repository,
-        ),
-        getSavingsCategoriesUseCase: GetSavingsCategoriesUseCase(
-          repository: repository,
-        ),
-        getSavingGoalUseCase: GetSavingGoalUseCase(
-          repository: repository,
-        ),
-        addSavingUseCase: AddSavingUseCase(
-          repository: repository,
-        ),
-        addSavingCategoryUseCase: AddSavingCategoryUseCase(
-          repository: repository,
-        ),
-      )..add(const LoadSavingsCategories()),
+        return SavingsBloc(
+          getSavingsUseCase: GetSavingsUseCase(repository),
+          getSavingsCategoriesUseCase:
+          GetSavingsCategoriesUseCase(repository),
+          getSavingGoalUseCase: GetSavingGoalUseCase(repository),
+          addSavingUseCase: AddSavingUseCase(repository),
+          addSavingCategoryUseCase:
+          AddSavingCategoryUseCase(repository),
+        )..add(const LoadSavingsCategories());
+      },
       child: SavingsView(
         totalBalance: totalBalance,
         totalExpense: totalExpense,
@@ -109,16 +103,13 @@ class _SavingsViewState extends State<SavingsView> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final scale = (size.width / 375).clamp(0.85, 1.15);
+    final scale =
+    (size.width / 375).clamp(0.85, 1.15).toDouble();
 
-    double percentage = 0;
-
-    if (widget.totalIncome > 0) {
-      percentage =
-          (widget.totalExpense / widget.totalIncome) * 100;
-    }
-
-    percentage = percentage.clamp(0.0, 100.0);
+    final percentage = widget.totalIncome > 0
+        ? (widget.totalExpense / widget.totalIncome * 100)
+        .clamp(0.0, 100.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -127,12 +118,9 @@ class _SavingsViewState extends State<SavingsView> {
         child: Column(
           children: [
             SizedBox(height: 14 * scale),
-
-            // Header
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 25 * scale,
-              ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 25 * scale),
               child: Row(
                 children: [
                   GestureDetector(
@@ -155,32 +143,14 @@ class _SavingsViewState extends State<SavingsView> {
                       ),
                     ),
                   ),
-                  Container(
-                    width: 32 * scale,
-                    height: 32 * scale,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkCard
-                          : AppColors.lightGreen,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.notifications_none,
-                      color: headerTextColor,
-                      size: 20 * scale,
-                    ),
-                  ),
+                  _notificationButton(scale),
                 ],
               ),
             ),
-
             SizedBox(height: 22 * scale),
-
-            // Summary
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 30 * scale,
-              ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 30 * scale),
               child: Row(
                 children: [
                   Expanded(
@@ -217,32 +187,22 @@ class _SavingsViewState extends State<SavingsView> {
                 ],
               ),
             ),
-
             SizedBox(height: 12 * scale),
-
-            // Expense progress
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 30 * scale,
-              ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 30 * scale),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final totalWidth = constraints.maxWidth;
+                  final width = constraints.maxWidth;
                   final height = 26 * scale;
-
-                  final fillWidth =
-                      totalWidth * percentage / 100;
-
-                  final amountOnDark =
-                      fillWidth > totalWidth - 110 * scale;
+                  final fillWidth = width * percentage / 100;
 
                   return Container(
                     width: double.infinity,
                     height: height,
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkCard
-                          : AppColors.white,
+                      color:
+                      isDark ? AppColors.darkCard : AppColors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: ClipRRect(
@@ -255,10 +215,9 @@ class _SavingsViewState extends State<SavingsView> {
                             curve: Curves.easeOut,
                             width: fillWidth,
                             height: height,
-                            padding: EdgeInsets.only(
-                              left: 12 * scale,
-                            ),
                             alignment: Alignment.centerLeft,
+                            padding:
+                            EdgeInsets.only(left: 12 * scale),
                             decoration: BoxDecoration(
                               color: isDark
                                   ? AppColors.lightGreen
@@ -289,13 +248,9 @@ class _SavingsViewState extends State<SavingsView> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 10 * scale,
                                   fontWeight: FontWeight.w600,
-                                  color: amountOnDark
-                                      ? (isDark
-                                      ? AppColors.darkBackground
-                                      : AppColors.white)
-                                      : (isDark
+                                  color: isDark
                                       ? AppColors.darkText
-                                      : AppColors.darkGreen),
+                                      : AppColors.darkGreen,
                                 ),
                               ),
                             ),
@@ -307,41 +262,31 @@ class _SavingsViewState extends State<SavingsView> {
                 },
               ),
             ),
-
             SizedBox(height: 10 * scale),
-
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 30 * scale,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_box_outlined,
-                      size: 14 * scale,
-                      color: headerTextColor,
-                    ),
-                    SizedBox(width: 6 * scale),
-                    Flexible(
-                      child: Text(
-                        '${percentage.toStringAsFixed(0)}% Of Your Expenses, Looks Good.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11 * scale,
-                          color: headerTextColor,
-                        ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 30 * scale),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_box_outlined,
+                    size: 14 * scale,
+                    color: headerTextColor,
+                  ),
+                  SizedBox(width: 6 * scale),
+                  Expanded(
+                    child: Text(
+                      '${percentage.toStringAsFixed(0)}% of your expenses.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11 * scale,
+                        color: headerTextColor,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
             SizedBox(height: 20 * scale),
-
-            // Categories panel
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -352,9 +297,35 @@ class _SavingsViewState extends State<SavingsView> {
                     topRight: Radius.circular(50 * scale),
                   ),
                 ),
-                child: BlocBuilder<SavingsBloc, SavingsState>(
+                child: BlocConsumer<SavingsBloc, SavingsState>(
+                  listenWhen: (previous, current) =>
+                  previous.categoryAdded !=
+                      current.categoryAdded ||
+                      previous.errorMessage != current.errorMessage,
+                  listener: (context, state) {
+                    if (state.categoryAdded) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Category added successfully'),
+                        ),
+                      );
+                      context.read<SavingsBloc>().add(
+                        const ClearSavingFeedback(),
+                      );
+                    } else if (state.errorMessage != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.errorMessage!),
+                        ),
+                      );
+                      context.read<SavingsBloc>().add(
+                        const ClearSavingFeedback(),
+                      );
+                    }
+                  },
                   builder: (context, state) {
-                    if (state.status == SavingsStatus.loading) {
+                    if (state.status == SavingsStatus.loading &&
+                        state.savingCategories.isEmpty) {
                       return Center(
                         child: CircularProgressIndicator(
                           color: isDark
@@ -364,18 +335,32 @@ class _SavingsViewState extends State<SavingsView> {
                       );
                     }
 
-                    if (state.status == SavingsStatus.failure) {
+                    if (state.status == SavingsStatus.failure &&
+                        state.savingCategories.isEmpty) {
                       return Center(
                         child: Padding(
                           padding: EdgeInsets.all(24 * scale),
-                          child: Text(
-                            state.errorMessage ??
-                                'Something went wrong',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12 * scale,
-                              color: cardTextColor,
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                state.errorMessage ??
+                                    'Something went wrong.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12 * scale,
+                                  color: cardTextColor,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  context.read<SavingsBloc>().add(
+                                    const LoadSavingsCategories(),
+                                  );
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -390,9 +375,7 @@ class _SavingsViewState extends State<SavingsView> {
                           Icon(
                             Icons.savings_outlined,
                             size: 48 * scale,
-                            color: isDark
-                                ? AppColors.darkSecondaryText
-                                : AppColors.darkGreen,
+                            color: cardTextColor,
                           ),
                           SizedBox(height: 10 * scale),
                           Text(
@@ -408,6 +391,11 @@ class _SavingsViewState extends State<SavingsView> {
                       );
                     }
 
+                    final safeIndex =
+                    selectedIndex < categories.length
+                        ? selectedIndex
+                        : 0;
+
                     return Column(
                       children: [
                         Expanded(
@@ -415,23 +403,22 @@ class _SavingsViewState extends State<SavingsView> {
                             physics:
                             const BouncingScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
-                              35 * scale,
+                              25 * scale,
                               30 * scale,
-                              35 * scale,
+                              25 * scale,
                               10 * scale,
                             ),
                             itemCount: categories.length,
                             gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
-                              crossAxisSpacing: 16 * scale,
+                              crossAxisSpacing: 12 * scale,
                               mainAxisSpacing: 22 * scale,
                               childAspectRatio: 0.82,
                             ),
                             itemBuilder: (context, index) {
                               final category = categories[index];
-                              final isSelected =
-                                  selectedIndex == index;
+                              final selected = safeIndex == index;
 
                               return GestureDetector(
                                 onTap: () {
@@ -442,7 +429,7 @@ class _SavingsViewState extends State<SavingsView> {
                                   final bloc =
                                   context.read<SavingsBloc>();
 
-                                  Navigator.push(
+                                  Navigator.push<void>(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) =>
@@ -464,16 +451,17 @@ class _SavingsViewState extends State<SavingsView> {
                                       width: 80 * scale,
                                       height: 80 * scale,
                                       decoration: BoxDecoration(
-                                        color: isSelected
+                                        color: selected
                                             ? AppColors.strongBlue
-                                            : (isDark
+                                            : isDark
                                             ? AppColors.darkCard
-                                            : AppColors.blue),
+                                            : AppColors.blue,
                                         borderRadius:
                                         BorderRadius.circular(
                                           20 * scale,
                                         ),
-                                        border: isDark && isSelected
+                                        border:
+                                        isDark && selected
                                             ? Border.all(
                                           color: AppColors
                                               .calendarBlue,
@@ -482,7 +470,8 @@ class _SavingsViewState extends State<SavingsView> {
                                       ),
                                       child: Icon(
                                         _icon(category),
-                                        color: isDark && !isSelected
+                                        color:
+                                        isDark && !selected
                                             ? AppColors.darkText
                                             : AppColors.white,
                                         size: 44 * scale,
@@ -492,11 +481,10 @@ class _SavingsViewState extends State<SavingsView> {
                                     Text(
                                       category,
                                       maxLines: 1,
-                                      overflow:
-                                      TextOverflow.ellipsis,
+                                      overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.center,
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12 * scale,
+                                        fontSize: 11 * scale,
                                         fontWeight: FontWeight.w500,
                                         color: cardTextColor,
                                       ),
@@ -520,31 +508,18 @@ class _SavingsViewState extends State<SavingsView> {
     );
   }
 
-  Widget _addMoreButton(BuildContext context, double scale) {
-    return GestureDetector(
-      onTap: () => _showAddSavingCategoryDialog(context),
-      child: Container(
-        width: 120 * scale,
-        height: 34 * scale,
-        margin: EdgeInsets.only(bottom: 24 * scale),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkCard
-              : AppColors.primaryGreen,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Text(
-            'Add More',
-            style: GoogleFonts.poppins(
-              fontSize: 11 * scale,
-              fontWeight: FontWeight.w500,
-              color: isDark
-                  ? AppColors.darkText
-                  : AppColors.darkGreen,
-            ),
-          ),
-        ),
+  Widget _notificationButton(double scale) {
+    return Container(
+      width: 32 * scale,
+      height: 32 * scale,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : AppColors.lightGreen,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.notifications_none,
+        color: headerTextColor,
+        size: 20 * scale,
       ),
     );
   }
@@ -563,11 +538,7 @@ class _SavingsViewState extends State<SavingsView> {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: 12 * scale,
-                color: headerTextColor,
-              ),
+              Icon(icon, size: 12 * scale, color: headerTextColor),
               SizedBox(width: 4 * scale),
               Expanded(
                 child: Text(
@@ -598,156 +569,268 @@ class _SavingsViewState extends State<SavingsView> {
     );
   }
 
+  Widget _addMoreButton(BuildContext context, double scale) {
+    return GestureDetector(
+      onTap: () => _showAddSavingCategoryDialog(context),
+      child: Container(
+        width: 120 * scale,
+        height: 34 * scale,
+        margin: EdgeInsets.only(bottom: 24 * scale),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.primaryGreen,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Text(
+            'Add More',
+            style: GoogleFonts.poppins(
+              fontSize: 11 * scale,
+              fontWeight: FontWeight.w500,
+              color: isDark
+                  ? AppColors.darkText
+                  : AppColors.darkGreen,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   static IconData _icon(String category) {
     final name = category.toLowerCase();
 
-    if (name.contains('travel')) {
-      return Icons.flight_outlined;
-    }
-
-    if (name.contains('house')) {
-      return Icons.home_work_outlined;
-    }
-
-    if (name.contains('car')) {
-      return Icons.directions_car_outlined;
-    }
-
-    if (name.contains('wedding')) {
-      return Icons.celebration_outlined;
-    }
+    if (name.contains('travel')) return Icons.flight_outlined;
+    if (name.contains('house')) return Icons.home_work_outlined;
+    if (name.contains('car')) return Icons.directions_car_outlined;
+    if (name.contains('wedding')) return Icons.celebration_outlined;
+    if (name.contains('emergency')) return Icons.health_and_safety_outlined;
 
     return Icons.savings_outlined;
   }
 
   void _showAddSavingCategoryDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final goalController = TextEditingController();
+    final savingsBloc = context.read<SavingsBloc>();
 
     showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
-        final darkMode =
-            Theme.of(dialogContext).brightness == Brightness.dark;
-
-        final dialogBackground = darkMode
-            ? AppColors.darkSurface
-            : AppColors.white;
-        final textColor = darkMode
-            ? AppColors.darkText
-            : AppColors.darkGreen;
-        final fieldColor = darkMode
-            ? AppColors.darkSearchField
-            : AppColors.softGreen;
-
-        return AlertDialog(
-          backgroundColor: dialogBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        return BlocProvider<SavingsBloc>.value(
+          value: savingsBloc,
+          child: _AddSavingCategoryDialog(
+            isDark: isDark,
           ),
-          title: Text(
-            'Add Saving Category',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  hintText: 'Category name',
-                  hintStyle: TextStyle(
-                    color: darkMode
-                        ? AppColors.darkSecondaryText
-                        : AppColors.darkGreen.withValues(alpha: 0.6),
-                  ),
-                  filled: true,
-                  fillColor: fieldColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: goalController,
-                keyboardType:
-                const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  hintText: 'Goal amount',
-                  hintStyle: TextStyle(
-                    color: darkMode
-                        ? AppColors.darkSecondaryText
-                        : AppColors.darkGreen.withValues(alpha: 0.6),
-                  ),
-                  filled: true,
-                  fillColor: fieldColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            Center(
-              child: SizedBox(
-                width: 150,
-                height: 35,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final name = nameController.text.trim();
-                    final goal =
-                        double.tryParse(goalController.text.trim()) ??
-                            0;
-
-                    if (name.isEmpty) {
-                      return;
-                    }
-
-                    context.read<SavingsBloc>().add(
-                      AddSavingCategory(
-                        name: name,
-                        goal: goal,
-                      ),
-                    );
-
-                    Navigator.pop(dialogContext);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: AppColors.darkGreen,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    'Save',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
         );
       },
-    ).then((_) {
-      nameController.dispose();
-      goalController.dispose();
+    );
+  }
+  InputDecoration _dialogInput(
+      String hint,
+      Color fieldColor,
+      Color textColor,
+      ) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: textColor.withOpacity(0.6),
+      ),
+      filled: true,
+      fillColor: fieldColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+
+}
+
+class _AddSavingCategoryDialog extends StatefulWidget {
+  final bool isDark;
+
+  const _AddSavingCategoryDialog({
+    required this.isDark,
+  });
+
+  @override
+  State<_AddSavingCategoryDialog> createState() =>
+      _AddSavingCategoryDialogState();
+}
+
+class _AddSavingCategoryDialogState
+    extends State<_AddSavingCategoryDialog> {
+  final TextEditingController nameController =
+  TextEditingController();
+
+  final TextEditingController goalController =
+  TextEditingController();
+
+  bool isSubmitting = false;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    goalController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = widget.isDark;
+
+    final dialogBackground =
+    dark ? AppColors.darkSurface : AppColors.white;
+    final dialogTextColor =
+    dark ? AppColors.darkText : AppColors.darkGreen;
+    final fieldColor =
+    dark ? AppColors.darkSearchField : AppColors.softGreen;
+
+    return AlertDialog(
+      backgroundColor: dialogBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        'Add Saving Category',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: dialogTextColor,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            textCapitalization: TextCapitalization.words,
+            style: TextStyle(color: dialogTextColor),
+            decoration: _inputDecoration(
+              'Category name',
+              fieldColor,
+              dialogTextColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: goalController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            style: TextStyle(color: dialogTextColor),
+            decoration: _inputDecoration(
+              'Goal amount',
+              fieldColor,
+              dialogTextColor,
+            ),
+          ),
+        ],
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        SizedBox(
+          width: 150,
+          height: 38,
+          child: ElevatedButton(
+            onPressed: isSubmitting ? null : _saveCategory,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: AppColors.darkGreen,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: isSubmitting
+                ? const SizedBox(
+              width: 17,
+              height: 17,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+              ),
+            )
+                : Text(
+              'Save',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(
+      String hint,
+      Color fieldColor,
+      Color textColor,
+      ) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: textColor.withOpacity(0.6),
+      ),
+      filled: true,
+      fillColor: fieldColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  void _saveCategory() {
+    final name = nameController.text.trim();
+    final goalText = goalController.text.trim();
+    final goal = goalText.isEmpty
+        ? 0.0
+        : double.tryParse(goalText);
+
+    if (name.isEmpty) {
+      _showMessage('Enter category name');
+      return;
+    }
+
+    if (goal == null ||
+        !goal.isFinite ||
+        goal < 0) {
+      _showMessage('Enter a valid goal amount');
+      return;
+    }
+
+    setState(() => isSubmitting = true);
+
+    context.read<SavingsBloc>().add(
+      AddSavingCategory(
+        name: name,
+        goal: goal,
+      ),
+    );
+
+    // The BLoC handles the Firestore operation.
+    // Close the dialog only after its result is known.
+    // The existing SavingsScreen BlocConsumer displays feedback.
+    context.read<SavingsBloc>().stream.firstWhere(
+          (state) =>
+      state.categoryAdded ||
+          state.errorMessage != null,
+    ).then((state) {
+      if (!mounted) return;
+
+      if (state.categoryAdded) {
+        Navigator.of(context).pop();
+      } else {
+        setState(() => isSubmitting = false);
+      }
     });
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
