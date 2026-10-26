@@ -4,7 +4,6 @@ import 'package:equatable/equatable.dart';
 import '../../../../domain/entities/help/support_chat.dart';
 import '../../../../domain/entities/help/support_messge.dart';
 
-
 class SupportState extends Equatable {
   final bool isLoading;
   final bool isSending;
@@ -30,16 +29,16 @@ class SupportState extends Equatable {
     List<SupportChat>? chats,
     List<SupportMessage>? messages,
     String? selectedChatId,
+    bool clearSelectedChatId = false,
   }) {
     return SupportState(
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
-      errorMessage: clearError
-          ? null
-          : errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       chats: chats ?? this.chats,
       messages: messages ?? this.messages,
-      selectedChatId: selectedChatId ?? this.selectedChatId,
+      selectedChatId:
+      clearSelectedChatId ? null : selectedChatId ?? this.selectedChatId,
     );
   }
 

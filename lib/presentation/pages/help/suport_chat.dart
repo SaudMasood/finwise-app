@@ -40,7 +40,9 @@ class SupportChatScreen extends StatelessWidget {
         createChat: CreateSupportChat(repository),
         sendMessage: SendSupportMessage(repository),
         endChat: EndSupportChat(repository),
-      )..add(OpenSupportChat(chatId)),
+      )
+        ..add(const LoadSupportChats())
+        ..add(OpenSupportChat(chatId)),
       child: _SupportChatView(chatId: chatId),
     );
   }
@@ -58,9 +60,11 @@ class _SupportChatView extends StatefulWidget {
 class _SupportChatViewState extends State<_SupportChatView> {
   final TextEditingController _messageController =
   TextEditingController();
+
   final ScrollController _scrollController = ScrollController();
 
   bool _helpCenterSelected = false;
+  bool _endingChat = false;
 
   bool get isDark =>
       Theme.of(context).brightness == Brightness.dark;
@@ -80,6 +84,15 @@ class _SupportChatViewState extends State<_SupportChatView> {
   Color get secondaryText =>
       isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
 
+  bool _isChatEnded(SupportState state) {
+    for (final chat in state.chats) {
+      if (chat.id == widget.chatId) {
+        return !chat.isActive;
+      }
+    }
+    return false;
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -87,16 +100,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
     super.dispose();
   }
 
-  void _sendMessage(SupportBloc bloc) {
-    final text = _messageController.text.trim();
-
-    if (text.isEmpty || bloc.state.isSending) return;
-
-    bloc.add(SendSupportMessageEvent(widget.chatId, text));
-    _messageController.clear();
-  }
-
   void _showMessage(String text) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(text)),
     );
@@ -108,14 +114,101 @@ class _SupportChatViewState extends State<_SupportChatView> {
     return '$hour:$minute';
   }
 
+  void _sendMessage(SupportBloc bloc) {
+    final text = _messageController.text.trim();
+
+    if (text.isEmpty || bloc.state.isSending) return;
+
+    if (_isChatEnded(bloc.state)) {
+      _showMessage('This chat has ended. Start another chat.');
+      return;
+    }
+
+    bloc.add(SendSupportMessageEvent(widget.chatId, text));
+    _messageController.clear();
+  }
+
+  Future<void> _confirmEndChat() async {
+    final bloc = context.read<SupportBloc>();
+
+    if (_endingChat || _isChatEnded(bloc.state)) {
+      _showMessage('This chat has already ended.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: surface,
+        title: Text(
+          'End this chat?',
+          style: GoogleFonts.poppins(
+            color: textColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+          ),
+        ),
+        content: Text(
+          'You will not be able to send more messages in this conversation.',
+          style: GoogleFonts.poppins(
+            color: secondaryText,
+            fontSize: 12,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: textColor),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'End Chat',
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    setState(() => _endingChat = true);
+
+    // The BLoC updates Firestore and clears selectedChatId on success.
+    bloc.add(EndSupportChatEvent(widget.chatId));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SupportBloc, SupportState>(
+      listenWhen: (previous, current) =>
+      previous.errorMessage != current.errorMessage ||
+          previous.selectedChatId != current.selectedChatId ||
+          previous.messages != current.messages,
       listener: (context, state) {
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
+        final error = state.errorMessage;
+
+        if (error != null && error.isNotEmpty) {
+          if (mounted) {
+            setState(() => _endingChat = false);
+          }
+          _showMessage(error);
+        }
+
+        // The BLoC clears selectedChatId only after endChat succeeds.
+        if (state.selectedChatId == null &&
+            _endingChat &&
+            state.errorMessage == null) {
+          Navigator.of(context).pop();
+          return;
         }
 
         if (state.messages.isNotEmpty) {
@@ -132,17 +225,26 @@ class _SupportChatViewState extends State<_SupportChatView> {
       },
       builder: (context, state) {
         final bloc = context.read<SupportBloc>();
+        final chatEnded = _isChatEnded(state);
 
         return Scaffold(
           backgroundColor: pageBackground,
           body: SafeArea(
             child: Column(
               children: [
-                _header(),
+                _header(
+                  chatEnded: chatEnded,
+                  onEndChat: _confirmEndChat,
+                ),
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      18,
+                      16,
+                      12,
+                    ),
                     decoration: BoxDecoration(
                       color: surface,
                       borderRadius: const BorderRadius.vertical(
@@ -153,12 +255,35 @@ class _SupportChatViewState extends State<_SupportChatView> {
                       children: [
                         _tabs(),
                         const SizedBox(height: 16),
+                        if (chatEnded)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'This conversation has ended. '
+                                  'Start another chat to continue.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
                         Expanded(
                           child: _helpCenterSelected
                               ? _buildHelpCenter()
                               : _messages(state),
                         ),
-                        _composer(state, bloc),
+                        _composer(
+                          state,
+                          bloc,
+                          chatEnded: chatEnded,
+                        ),
                       ],
                     ),
                   ),
@@ -171,11 +296,14 @@ class _SupportChatViewState extends State<_SupportChatView> {
     );
   }
 
-  Widget _header() {
+  Widget _header({
+    required bool chatEnded,
+    required VoidCallback onEndChat,
+  }) {
     return SizedBox(
-      height: 100,
+      height: 76,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
         child: Row(
           children: [
             IconButton(
@@ -186,37 +314,62 @@ class _SupportChatViewState extends State<_SupportChatView> {
               ),
             ),
             Expanded(
-              child: Center(
-                child: Text(
-                  'Online Support',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? textColor : Colors.white,
-                  ),
+              child: Text(
+                'Online Support',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? textColor : Colors.white,
                 ),
               ),
             ),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: surface,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  Navigator.push(
+            PopupMenuButton<String>(
+              tooltip: 'Chat options',
+              onSelected: (value) {
+                if (value == 'end') {
+                  onEndChat();
+                } else if (value == 'notifications') {
+                  Navigator.push<void>(
                     context,
                     MaterialPageRoute<void>(
                       builder: (_) => const NotificationScreen(),
                     ),
                   );
-                },
-                icon: Icon(
-                  Icons.notifications_none,
-                  size: 20,
+                }
+              },
+              itemBuilder: (context) => [
+                if (!chatEnded)
+                  const PopupMenuItem<String>(
+                    value: 'end',
+                    child: Row(
+                      children: [
+                        Icon(Icons.close, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text('End Chat'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem<String>(
+                  value: 'notifications',
+                  child: Row(
+                    children: [
+                      Icon(Icons.notifications_none),
+                      SizedBox(width: 10),
+                      Text('Notifications'),
+                    ],
+                  ),
+                ),
+              ],
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: surface,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.more_vert,
                   color: textColor,
                 ),
               ),
@@ -282,7 +435,7 @@ class _SupportChatViewState extends State<_SupportChatView> {
   }
 
   Widget _messages(SupportState state) {
-    if (state.isLoading) {
+    if (state.isLoading && state.messages.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
           color: AppColors.primaryGreen,
@@ -310,8 +463,6 @@ class _SupportChatViewState extends State<_SupportChatView> {
         final message = state.messages[index];
         final isUser = message.isUser;
 
-        // Keep outgoing messages unchanged.
-        // Make received-message text white in dark mode.
         final bubbleTextColor = isUser
             ? Colors.white
             : (isDark ? Colors.white : textColor);
@@ -321,8 +472,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
             : cardColor;
 
         return Align(
-          alignment:
-          isUser ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: isUser
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
@@ -367,7 +519,6 @@ class _SupportChatViewState extends State<_SupportChatView> {
     );
   }
 
-
   Widget _iconBox({
     required IconData icon,
     required VoidCallback? onTap,
@@ -390,9 +541,20 @@ class _SupportChatViewState extends State<_SupportChatView> {
     );
   }
 
-  Widget _composer(SupportState state, SupportBloc bloc) {
+  Widget _composer(
+      SupportState state,
+      SupportBloc bloc, {
+        required bool chatEnded,
+      }) {
+    if (chatEnded) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(16),
@@ -448,7 +610,9 @@ class _SupportChatViewState extends State<_SupportChatView> {
           const SizedBox(width: 6),
           _iconBox(
             icon: Icons.send_outlined,
-            onTap: state.isSending ? null : () => _sendMessage(bloc),
+            onTap: state.isSending
+                ? null
+                : () => _sendMessage(bloc),
           ),
         ],
       ),

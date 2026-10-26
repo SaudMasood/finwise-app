@@ -54,12 +54,16 @@ class SupportBloc extends Bloc<SupportEvent, SupportState> {
     emit(state.copyWith(isLoading: false));
   }
 
+
   Future<void> _createChat(
       CreateNewSupportChat event,
       Emitter<SupportState> emit,
       ) async {
     try {
-      emit(state.copyWith(isLoading: true, clearError: true));
+      emit(state.copyWith(
+        isLoading: true,
+        clearError: true,
+      ));
 
       final chatId = await createChat(event.title);
 
@@ -76,6 +80,7 @@ class SupportBloc extends Bloc<SupportEvent, SupportState> {
       ));
     }
   }
+
 
   Future<void> _openChat(
       OpenSupportChat event,
@@ -119,6 +124,7 @@ class SupportBloc extends Bloc<SupportEvent, SupportState> {
     }
   }
 
+
   Future<void> _endChat(
       EndSupportChatEvent event,
       Emitter<SupportState> emit,
@@ -126,9 +132,10 @@ class SupportBloc extends Bloc<SupportEvent, SupportState> {
     try {
       await endChat(event.chatId);
       await _messagesSubscription?.cancel();
+      _messagesSubscription = null;
 
       emit(state.copyWith(
-        selectedChatId: null,
+        clearSelectedChatId: true,
         messages: [],
         clearError: true,
       ));
@@ -136,6 +143,7 @@ class SupportBloc extends Bloc<SupportEvent, SupportState> {
       emit(state.copyWith(errorMessage: error.toString()));
     }
   }
+
 
   void _chatsUpdated(
       SupportChatsUpdated event,
