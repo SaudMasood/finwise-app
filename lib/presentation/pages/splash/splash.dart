@@ -18,7 +18,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // Animation settings
   static const Duration _waitBeforeMove =
   Duration(milliseconds: 1500);
 
@@ -56,12 +55,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // 1. Move the logo and title upward.
     await _controller.forward();
 
     if (!mounted) return;
 
-    // 2. Fade into the next screen.
     final user = FirebaseAuth.instance.currentUser;
 
     Navigator.pushReplacement(
@@ -102,7 +99,6 @@ class _SplashScreenState extends State<SplashScreen>
         final t = _t.value;
 
         return Scaffold(
-          // Green changes to mint during the animation.
           backgroundColor: Color.lerp(
             AppColors.primaryGreen,
             AppColors.lightGreen,
@@ -132,7 +128,6 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: (width * 0.085).clamp(32.0, 38.0),
                           fontWeight: FontWeight.w600,
 
-                          // White changes to green during the animation.
                           color: Color.lerp(
                             AppColors.white,
                             AppColors.primaryGreen,
