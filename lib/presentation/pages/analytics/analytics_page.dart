@@ -304,8 +304,8 @@ class _AnalysisViewState extends State<_AnalysisView> {
           Expanded(
             child: _summaryItem(
               'Total Balance',
-             "\$5000000000000",
-             // '\$${balance.toStringAsFixed(2)}',
+             // "\$5000000000000",
+             '\$${balance.toStringAsFixed(2)}',
              headerTextColor,
             ),
           ),

@@ -11,9 +11,13 @@ const blue = Color(0xFF168BFF);
 
 class AuthLayout extends StatelessWidget {
   final String title;
-  final Widget child; // everything inside the light sheet
+  final Widget child;
 
-  const AuthLayout({super.key, required this.title, required this.child});
+  const AuthLayout({
+    super.key,
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,14 +41,14 @@ class AuthLayout extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Light rounded sheet
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   color: lightGreen,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(45)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(45),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -59,14 +63,16 @@ class AuthLayout extends StatelessWidget {
   }
 }
 
-class AuthField extends StatelessWidget {
+class AuthField extends StatefulWidget {
   final String label;
   final String hint;
   final TextEditingController controller;
   final TextInputType keyboardType;
-  final bool isPassword; // show eye icon?
-  final bool hidden; // is the password hidden?
+  final bool isPassword;
+  final bool hidden;
   final VoidCallback? onEyeTap;
+  final String? Function(String value)? validator;
+  final ValueChanged<String>? onChanged;
 
   const AuthField({
     super.key,
@@ -77,7 +83,38 @@ class AuthField extends StatelessWidget {
     this.isPassword = false,
     this.hidden = false,
     this.onEyeTap,
+    this.validator,
+    this.onChanged,
   });
+
+  @override
+  State<AuthField> createState() => _AuthFieldState();
+}
+
+class _AuthFieldState extends State<AuthField> {
+  String? errorText;
+
+  void _validate(String value) {
+    if (widget.validator == null) return;
+
+    final error = widget.validator!(value);
+
+    if (mounted && errorText != error) {
+      setState(() => errorText = error);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AuthField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Revalidate when a related field changes,
+    // for example when the password changes.
+    if (widget.validator != oldWidget.validator &&
+        widget.controller.text.isNotEmpty) {
+      errorText = widget.validator?.call(widget.controller.text);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +122,7 @@ class AuthField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -93,26 +130,34 @@ class AuthField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-
         SizedBox(
           height: 42,
           child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            obscureText: isPassword && hidden,
-            style: GoogleFonts.poppins(fontSize: 13, color: dark),
+            controller: widget.controller,
+            keyboardType: widget.keyboardType,
+            obscureText: widget.isPassword && widget.hidden,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: dark,
+            ),
+            onChanged: (value) {
+              _validate(value);
+              widget.onChanged?.call(value);
+            },
             decoration: InputDecoration(
               filled: true,
               fillColor: fieldGreen,
-              hintText: hint,
-              hintStyle: GoogleFonts.poppins(fontSize: 13, color: hintColor),
+              hintText: widget.hint,
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 13,
+                color: hintColor,
+              ),
               contentPadding: const EdgeInsets.only(left: 22),
-              // Eye icon only for password fields
-              suffixIcon: isPassword
+              suffixIcon: widget.isPassword
                   ? IconButton(
-                onPressed: onEyeTap,
+                onPressed: widget.onEyeTap,
                 icon: Icon(
-                  hidden
+                  widget.hidden
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
                   size: 18,
@@ -124,9 +169,28 @@ class AuthField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide.none,
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ),
+        if (errorText != null && errorText!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, top: 4),
+            child: Text(
+              errorText!,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: Colors.red.shade700,
+              ),
+            ),
+          ),
         const SizedBox(height: 14),
       ],
     );
@@ -155,7 +219,7 @@ class GreenButton extends StatelessWidget {
       width: width,
       height: 44,
       child: ElevatedButton(
-        onPressed: loading ? null : onTap, // disabled while loading
+        onPressed: loading ? null : onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: filled ? green : fieldGreen,
           foregroundColor: dark,
@@ -169,7 +233,10 @@ class GreenButton extends StatelessWidget {
             ? const SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: dark),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: dark,
+          ),
         )
             : Text(
           text,
@@ -187,7 +254,11 @@ class SocialRow extends StatelessWidget {
   final VoidCallback onFacebook;
   final VoidCallback onGoogle;
 
-  const SocialRow({super.key, required this.onFacebook, required this.onGoogle});
+  const SocialRow({
+    super.key,
+    required this.onFacebook,
+    required this.onGoogle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -207,14 +278,20 @@ class SocialRow extends StatelessWidget {
           children: [
             GestureDetector(
               onTap: onFacebook,
-              child: SvgPicture.asset('assets/icons/login_facebook.svg',
-                  width: 33, height: 33),
+              child: SvgPicture.asset(
+                'assets/icons/login_facebook.svg',
+                width: 33,
+                height: 33,
+              ),
             ),
             const SizedBox(width: 17),
             GestureDetector(
               onTap: onGoogle,
-              child: SvgPicture.asset('assets/icons/login_google.svg',
-                  width: 33, height: 33),
+              child: SvgPicture.asset(
+                'assets/icons/login_google.svg',
+                width: 33,
+                height: 33,
+              ),
             ),
           ],
         ),
@@ -248,7 +325,10 @@ class BottomText extends StatelessWidget {
           ),
           children: [
             TextSpan(text: normalText),
-            TextSpan(text: linkText, style: const TextStyle(color: blue)),
+            TextSpan(
+              text: linkText,
+              style: const TextStyle(color: blue),
+            ),
           ],
         ),
       ),

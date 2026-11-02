@@ -1,4 +1,3 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,9 +30,11 @@ class LoginScreen extends StatelessWidget {
         final loginDataSource = LoginDataSource(
           firebaseAuth: auth,
         );
+
         final googleDataSource = GoogleLoginDataSource(
           firebaseAuth: auth,
         );
+
         final facebookDataSource = FacebookLoginDataSource(
           firebaseAuth: auth,
         );
@@ -66,6 +67,32 @@ class _LoginViewState extends State<LoginView> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  String? _validateEmail(String value) {
+    final email = value.trim();
+
+    if (email.isEmpty) {
+      return 'Email is required.';
+    }
+
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      return 'Enter a valid email address.';
+    }
+
+    return null;
+  }
+
+  String? _validatePassword(String value) {
+    if (value.isEmpty) {
+      return 'Password is required.';
+    }
+
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters.';
+    }
+
+    return null;
+  }
+
   @override
   void dispose() {
     emailController.dispose();
@@ -74,13 +101,13 @@ class _LoginViewState extends State<LoginView> {
   }
 
   void login() {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+    final emailError = _validateEmail(emailController.text);
+    final passwordError = _validatePassword(passwordController.text);
 
-    if (email.isEmpty || password.isEmpty) {
+    if (emailError != null || passwordError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter email and password.'),
+        SnackBar(
+          content: Text(emailError ?? passwordError!),
         ),
       );
       return;
@@ -88,8 +115,8 @@ class _LoginViewState extends State<LoginView> {
 
     context.read<LoginBloc>().add(
       LoginButtonPressed(
-        email: email,
-        password: password,
+        email: emailController.text.trim(),
+        password: passwordController.text,
       ),
     );
   }
@@ -126,6 +153,7 @@ class _LoginViewState extends State<LoginView> {
               hint: 'example@example.com',
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
+              validator: _validateEmail,
             ),
             AuthField(
               label: 'Password',
@@ -133,6 +161,7 @@ class _LoginViewState extends State<LoginView> {
               controller: passwordController,
               isPassword: true,
               hidden: !isPasswordVisible,
+              validator: _validatePassword,
               onEyeTap: () {
                 setState(() {
                   isPasswordVisible = !isPasswordVisible;
