@@ -127,8 +127,8 @@ class _ProfileView extends StatelessWidget {
                               child: Text(
                                 'Profile',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? AppColors.darkText
                                       : AppColors.darkGreen,

@@ -49,7 +49,7 @@ class SecurityScreen extends StatelessWidget {
                       'Security',
                       style: GoogleFonts.poppins(
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: textColor,
                       ),
                     ),

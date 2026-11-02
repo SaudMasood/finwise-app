@@ -205,8 +205,8 @@ class _FaqContactView extends StatelessWidget {
                   'Help & FAQs',
                   style: GoogleFonts.poppins(
                     fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? textColor : Colors.white,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : textColor,
                   ),
                 ),
               ),

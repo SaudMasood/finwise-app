@@ -442,7 +442,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
                     'Edit My Profile',
                     style: GoogleFonts.poppins(
                       fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: isDark ? AppColors.darkText : Colors.black,
                     ),
                   ),
