@@ -86,25 +86,43 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
   }
 
+
   Future<void> _onChangeProfileImage(
       ChangeProfileImage event,
       Emitter<ProfileState> emit,
       ) async {
+    final currentProfile = state.profile;
+
+    if (currentProfile == null) {
+      emit(state.copyWith(error: 'Profile is not loaded.'));
+      return;
+    }
+
+    emit(state.copyWith(
+      isImageUploading: true,
+      clearError: true,
+      clearMessage: true,
+    ));
+
     try {
-      final imagePath = await pickProfileImage();
+      final imageUrl = await pickProfileImage();
 
-      if (imagePath == null) return;
-
-      final currentProfile = state.profile;
-      if (currentProfile == null) return;
+      if (imageUrl == null) {
+        emit(state.copyWith(isImageUploading: false));
+        return;
+      }
 
       emit(state.copyWith(
-        profile: currentProfile.copyWith(imagePath: imagePath),
-        message: 'Profile picture updated.',
-        clearError: true,
+        isImageUploading: false,
+        profile: currentProfile.copyWith(imagePath: imageUrl),
+        message: 'Profile picture updated successfully.',
       ));
     } catch (error) {
-      emit(state.copyWith(error: error.toString()));
+      emit(state.copyWith(
+        isImageUploading: false,
+        error: error.toString(),
+      ));
     }
   }
+
 }

@@ -62,6 +62,10 @@ key.properties
 # Social login configuration - keep local configuration out of GitHub
 /lib/core/config/social_login_config.dart
 /android/app/src/main/res/values/social_login.xml
+# Cloudinary configuration
+/lib/core/config/cloudinary_config.dart
+
+
 
 # Keep example templates tracked
 !/lib/core/config/social_login_config.example.dart

@@ -1,6 +1,4 @@
 
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/color/app_color.dart';
 import '../../../data/datasources/local/profile_data_locl.dart';
+import '../../../data/datasources/remote/cloudnary_datsorce.dart';
 import '../../../data/datasources/remote/profile_datas.dart';
 import '../../../data/repositories/profile/profile_repository_impl.dart';
 import '../../../domain/usecases/profile/profile_usecase.dart';
@@ -26,12 +25,10 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localDataSource = ProfileLocalDataSource();
-    final remoteDataSource = ProfileRemoteDataSource();
-
     final repository = ProfileRepositoryImpl(
-      remoteDataSource: remoteDataSource,
-      localDataSource: localDataSource,
+      remoteDataSource: ProfileRemoteDataSource(),
+      localDataSource: ProfileLocalDataSource(),
+      cloudinaryDataSource: CloudinaryDataSource(),
     );
 
     return BlocProvider(
@@ -52,15 +49,21 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     final backgroundColor =
     isDark ? AppColors.darkBackground : AppColors.primaryGreen;
+
     final surfaceColor =
     isDark ? AppColors.darkSurface : AppColors.lightGreen;
-    final textColor = isDark ? AppColors.darkText : AppColors.darkGreen;
+
+    final textColor =
+    isDark ? AppColors.darkText : AppColors.darkGreen;
+
     final secondaryColor =
     isDark ? AppColors.darkSecondaryText : AppColors.darkGreen;
+
     final avatarBackground =
     isDark ? AppColors.darkCard : AppColors.softGreen;
 
@@ -95,6 +98,9 @@ class _ProfileView extends StatelessWidget {
         final uid = user?.uid ?? profile?.uid ?? '';
         final shortId = uid.length > 8 ? uid.substring(0, 8) : uid;
 
+        final imageUrl = profile?.imagePath;
+        final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
         return Scaffold(
           backgroundColor: backgroundColor,
           body: SafeArea(
@@ -110,7 +116,8 @@ class _ProfileView extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: IconButton(
-                            onPressed: () => Navigator.maybePop(context),
+                            onPressed: () =>
+                                Navigator.maybePop(context),
                             icon: Icon(
                               Icons.arrow_back,
                               color: isDark
@@ -266,7 +273,7 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.verified_user_outlined,
                                 title: 'Security',
-                                color: AppColors.strongBlue,
+                                color: AppColors.blue,
                                 textColor: textColor,
                                 onTap: () {
                                   Navigator.push(
@@ -311,7 +318,7 @@ class _ProfileView extends StatelessWidget {
                               _ProfileMenuItem(
                                 icon: Icons.logout,
                                 title: 'Logout',
-                                color: AppColors.strongBlue,
+                                color: AppColors.blue,
                                 textColor: textColor,
                                 onTap: () =>
                                     showLogoutDialog(context),
@@ -330,43 +337,54 @@ class _ProfileView extends StatelessWidget {
                             child: SizedBox(
                               width: _avatarSize,
                               height: _avatarSize,
-                              child: profile?.imagePath != null &&
-                                  File(profile!.imagePath!).existsSync()
-                                  ? Image.file(
-                                File(profile.imagePath!),
+                              child: hasImage
+                                  ? Image.network(
+                                imageUrl,
                                 width: _avatarSize,
                                 height: _avatarSize,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: avatarBackground,
-                                  alignment: Alignment.center,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 44,
-                                    color: textColor,
-                                  ),
-                                ),
+                                loadingBuilder: (
+                                    context,
+                                    child,
+                                    loadingProgress,
+                                    ) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
+
+                                  return Container(
+                                    color: avatarBackground,
+                                    alignment: Alignment.center,
+                                    child:
+                                    CircularProgressIndicator(
+                                      color: isDark
+                                          ? AppColors.lightGreen
+                                          : AppColors.primaryGreen,
+                                      strokeWidth: 2,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (_, __, ___) =>
+                                    _defaultAvatar(
+                                      avatarBackground,
+                                      textColor,
+                                    ),
                               )
                                   : Image.asset(
                                 'assets/images/profile.png',
                                 width: _avatarSize,
                                 height: _avatarSize,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: avatarBackground,
-                                  alignment: Alignment.center,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 44,
-                                    color: textColor,
-                                  ),
-                                ),
+                                errorBuilder: (_, __, ___) =>
+                                    _defaultAvatar(
+                                      avatarBackground,
+                                      textColor,
+                                    ),
                               ),
                             ),
                           ),
                         ),
                       ),
-
                     ],
                   ),
                 ),
@@ -375,6 +393,18 @@ class _ProfileView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _defaultAvatar(Color background, Color iconColor) {
+    return Container(
+      color: background,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person,
+        size: 44,
+        color: iconColor,
+      ),
     );
   }
 }

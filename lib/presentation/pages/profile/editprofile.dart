@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +10,7 @@ import '../../../core/color/app_color.dart';
 import '../../../core/prefrences/app_prefrences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/datasources/local/profile_data_locl.dart';
+import '../../../data/datasources/remote/cloudnary_datsorce.dart';
 import '../../../data/datasources/remote/profile_datas.dart';
 import '../../../data/repositories/profile/profile_repository_impl.dart';
 import '../../../domain/entities/profile/profile.dart';
@@ -28,6 +28,7 @@ class EditProfileScreen extends StatelessWidget {
     final repository = ProfileRepositoryImpl(
       remoteDataSource: ProfileRemoteDataSource(),
       localDataSource: ProfileLocalDataSource(),
+      cloudinaryDataSource: CloudinaryDataSource(),
     );
 
     return BlocProvider(
@@ -54,12 +55,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
-  final localDataSource = ProfileLocalDataSource();
 
-  String? imagePath;
   String? loadedUid;
 
-  bool imageLoading = false;
   bool fieldsLoaded = false;
   bool notification = true;
   bool darkTheme = false;
@@ -70,11 +68,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
 
   Color get _primaryGreen => AppColors.primaryGreen;
 
-  // Fix: the outside area remains green in light mode.
   Color get _backgroundColor =>
       _isDark ? AppColors.darkBackground : AppColors.primaryGreen;
 
-  // Fix: do not rely on the theme surface, which may be white.
   Color get _surfaceColor =>
       _isDark ? AppColors.darkSurface : AppColors.lightGreen;
 
@@ -91,7 +87,6 @@ class _EditProfileViewState extends State<_EditProfileView> {
   void initState() {
     super.initState();
     _loadSettings();
-    _loadAvatar();
   }
 
   @override
@@ -128,6 +123,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
       ]);
 
       final dark = results[0] as bool;
+
       final settings =
       results[1] as DocumentSnapshot<Map<String, dynamic>>;
 
@@ -156,25 +152,6 @@ class _EditProfileViewState extends State<_EditProfileView> {
     }
   }
 
-  Future<void> _loadAvatar() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final path = await localDataSource.getImagePath(user.uid);
-
-      if (!mounted) return;
-
-      setState(() => imagePath = path);
-    } catch (e) {
-      debugPrint('Unable to load avatar: $e');
-
-      if (!mounted) return;
-
-      setState(() => imagePath = null);
-    }
-  }
-
   void _loadFields(UserProfile profile) {
     if (fieldsLoaded && loadedUid == profile.uid) return;
 
@@ -191,31 +168,15 @@ class _EditProfileViewState extends State<_EditProfileView> {
     emailController.text = user?.email ?? profile.email;
   }
 
-  Future<void> _changeAvatar(String uid) async {
-    if (imageLoading) return;
+  // Upload profile image through BLoC -> Repository -> Cloudinary.
+  void _changeAvatar() {
+    final state = context.read<ProfileBloc>().state;
 
-    setState(() => imageLoading = true);
+    if (state.isImageUploading) return;
 
-    try {
-      final path = await localDataSource.pickAndSaveImage(uid);
-
-      if (!mounted) return;
-
-      if (path != null) {
-        setState(() => imagePath = path);
-        _showMessage('Profile picture saved successfully');
-      }
-    } catch (e) {
-      debugPrint('Unable to select profile picture: $e');
-
-      if (mounted) {
-        _showMessage('Unable to select profile picture');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => imageLoading = false);
-      }
-    }
+    context.read<ProfileBloc>().add(
+      const ChangeProfileImage(),
+    );
   }
 
   Future<void> _changeNotifications(bool value) async {
@@ -337,7 +298,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
         if (state.message != null && state.message!.isNotEmpty) {
           _showMessage(state.message!);
 
-          if (state.message!.contains('successfully')) {
+          // Only close after saving profile details.
+          // Keep this screen open after a successful image upload.
+          if (state.message == 'Profile updated successfully.') {
             Navigator.pop(context, true);
           }
         }
@@ -399,7 +362,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
                           left: 0,
                           right: 0,
                           child: Center(
-                            child: _avatar(context, profile.uid),
+                            child: _avatar(context, profile, state),
                           ),
                         ),
                     ],
@@ -422,7 +385,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
 
     return Container(
       width: double.infinity,
-      color: isDark ? AppColors.darkBackground : AppColors.primaryGreen,
+      color: isDark
+          ? AppColors.darkBackground
+          : AppColors.primaryGreen,
       child: SizedBox(
         height: 140,
         child: Padding(
@@ -443,7 +408,9 @@ class _EditProfileViewState extends State<_EditProfileView> {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkText : Colors.black,
+                      color: isDark
+                          ? AppColors.darkText
+                          : Colors.black,
                     ),
                   ),
                 ),
@@ -484,13 +451,17 @@ class _EditProfileViewState extends State<_EditProfileView> {
     );
   }
 
-  Widget _avatar(BuildContext context, String uid) {
-    final hasImage =
-        imagePath != null && File(imagePath!).existsSync();
+  Widget _avatar(
+      BuildContext context,
+      UserProfile profile,
+      ProfileState state,
+      ) {
+    final imageUrl = profile.imagePath;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: () => _changeAvatar(uid),
+      onTap: state.isImageUploading ? null : _changeAvatar,
       child: SizedBox(
         width: _avatarSize,
         height: _avatarSize,
@@ -503,15 +474,15 @@ class _EditProfileViewState extends State<_EditProfileView> {
                 height: _avatarSize,
                 child: Container(
                   color: theme.colorScheme.surfaceContainerHighest,
-                  child: imageLoading
+                  child: state.isImageUploading
                       ? Center(
                     child: CircularProgressIndicator(
                       color: _primaryGreen,
                     ),
                   )
                       : hasImage
-                      ? Image.file(
-                    File(imagePath!),
+                      ? Image.network(
+                    imageUrl,
                     width: _avatarSize,
                     height: _avatarSize,
                     fit: BoxFit.cover,
@@ -705,8 +676,6 @@ class _EditProfileViewState extends State<_EditProfileView> {
     );
   }
 
-  // Smaller text field: height 42 -> 34. isDense + zero contentPadding
-  // keeps the text vertically centered inside the shorter box.
   Widget _input(
       TextEditingController controller,
       String hint, {

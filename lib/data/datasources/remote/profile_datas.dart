@@ -14,6 +14,7 @@ class ProfileRemoteDataSource {
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
+  // Get user profile from Firestore
   Future<UserProfileModel> getProfile() async {
     final user = auth.currentUser;
 
@@ -40,6 +41,7 @@ class ProfileRemoteDataSource {
     );
   }
 
+  // Save profile information
   Future<void> saveProfile(UserProfileModel profile) async {
     final user = auth.currentUser;
 
@@ -70,6 +72,7 @@ class ProfileRemoteDataSource {
             'Please log out and log in again before changing your email.',
           );
         }
+
         throw Exception(error.message ?? 'Unable to update email.');
       }
     }
@@ -85,5 +88,37 @@ class ProfileRemoteDataSource {
       'phone': phone,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  // Save Cloudinary image URL in the existing Firestore user document
+  Future<void> saveProfileImageUrl(String imageUrl) async {
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('Please log in first.');
+    }
+
+    await firestore.collection('users').doc(user.uid).set({
+      'photoUrl': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  // Get Cloudinary image URL from Firestore
+  Future<String?> getProfileImageUrl() async {
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('Please log in first.');
+    }
+
+    final doc =
+    await firestore.collection('users').doc(user.uid).get();
+
+    final photoUrl = doc.data()?['photoUrl'];
+
+    return photoUrl is String && photoUrl.isNotEmpty
+        ? photoUrl
+        : null;
   }
 }

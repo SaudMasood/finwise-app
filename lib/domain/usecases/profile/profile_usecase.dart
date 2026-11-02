@@ -1,6 +1,4 @@
 
-
-import '../../../data/repositories/profile/profile_repository_impl.dart';
 import '../../entities/profile/profile.dart';
 import '../../repositories/profile/profile_repository.dart';
 

@@ -6,7 +6,8 @@ class AppPreferences {
 
   static const String _notificationPrefix = 'finwise_notification_';
 
-//darkmode seting
+  // ---------------- DARK MODE SETTINGS ----------------
+
   static Future<bool> getDarkMode(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('dark_mode_$uid') ?? false;
@@ -72,24 +73,5 @@ class AppPreferences {
       _notificationKey(uid, key),
       enabled,
     );
-  }
-
-
-  static Future<String?> getProfileImagePath(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('profile_image_$uid');
-  }
-
-  static Future<void> saveProfileImagePath({
-    required String uid,
-    required String imagePath,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_image_$uid', imagePath);
-  }
-
-  static Future<void> removeProfileImagePath(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('profile_image_$uid');
   }
 }
